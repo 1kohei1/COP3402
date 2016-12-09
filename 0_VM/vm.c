@@ -21,6 +21,8 @@ struct instruction instructions[MAX_CODE_LENGTH];
 // Other helper variables
 int numInstructions = 0;
 int halt = 0;
+int numAR = 0;                  // The number of activation record in VM. It doesn't count main AR
+int ARBase[MAX_LEXI_LEVELS];    // This stores the base of each activation record.
 
 // Registers
 int sp = 0;
@@ -42,6 +44,7 @@ int base(int l, int b);
 void executeInstruction();
 void printVMStatus();
 void printStack();
+int shouldPrintPipe(int index);
 // Utility functions for debug
 void printInstructions();
 
@@ -63,7 +66,9 @@ int main(int argc, char** argv) {
         return 0;
     }
     
+    // First print PM/0 code,
     printAssemblyCode();
+    // Then, print VM status step by step.
     runVMandPrint();
 }
 
@@ -251,6 +256,10 @@ void executeInstruction() {
             sp = bp - 1;
             pc = stack[sp + 4];
             bp = stack[sp + 3];
+            
+            // Number of activation record changed. Decrease numAR by 1.
+            numAR--;
+            
         } else if (m == 1) {    // NEG
             stack[sp] = (-1) * stack[sp];
         } else if (m == 2) {    // ADD
@@ -305,6 +314,11 @@ void executeInstruction() {
         stack[sp + 4] = pc;
         bp = sp + 1;
         pc = m;
+        
+        // New activation record is inserted. Update numAR and ARBase
+        ARBase[numAR] = bp;
+        numAR++;
+        
     } else if (op == 6) {   // INC
         sp += m;
     } else if (op == 7) {   // JMP
@@ -347,9 +361,25 @@ void printVMStatus() {
 }
 
 void printStack() {
-    
+    int i;
+    for (i = 1; i <= sp; i++) {
+        if (shouldPrintPipe(i)) {
+            printf("| ");
+        }
+        printf("%d ", stack[i]);
+    }
 }
 
-
+// Determine if given index is the start of activation record
+int shouldPrintPipe(int index) {
+    int i;
+    for (i = 0; i < numAR; i++) {
+        if (index == ARBase[i]) {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
 
 
