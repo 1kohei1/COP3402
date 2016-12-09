@@ -40,6 +40,8 @@ char* getMPart(char* opPart, struct instruction instr);
 // Functions for running virtual machine
 int base(int l, int b);
 void executeInstruction();
+void printVMStatus();
+void printStack();
 // Utility functions for debug
 void printInstructions();
 
@@ -158,7 +160,7 @@ char* getOpPart(struct instruction instr) {
     }
 
     // It should never reaches here. When it reaches here, something weird is going on
-    printf("Something wrong is happening.\n");
+    printf("Something wrong is happening. 1\n");
     return "";
 }
 
@@ -206,17 +208,23 @@ char* getMPart(char* opPart, struct instruction instr) {
 
 void runVMandPrint() {
     // Print VM header
-    printf("Execution\n");
+    printf("Execution:\n");
     printf("                      pc   bp   sp   stack\n");
+    printf("                     %3d  %3d  %3d   \n", pc, bp, sp);
     
     while (halt == 0) {
         // Fetch
         ir = instructions[pc];
+        // Print current pc and assembly code
+        char* assemblyCode = getAssemblerCode(ir);
+        printf("%3d  %s", pc, assemblyCode);
         pc++;
         
         // Execute
         executeInstruction();
-        
+     
+        // Print status of VM
+        printVMStatus();   
     }
 }
 
@@ -282,7 +290,7 @@ void executeInstruction() {
             stack[sp] = stack[sp] >= stack[sp + 1];
         } else {
             // We should never reach here. When we reach here, something is wrong.
-            printf("Something is wrong\n");
+            printf("Something is wrong 2\n");
         }
     } else if (op == 3) {   // LOD
         sp++;
@@ -317,15 +325,30 @@ void executeInstruction() {
             halt = 1;
         } else {
         // We should never reach here. When we reach here, something is wrong.
-        printf("Something is wrong\n");
+        printf("Something is wrong 3\n");
         }
     } else {
         // We should never reach here. When we reach here, something is wrong.
-        printf("Something is wrong\n");
+        printf("Something is wrong 4\n");
     }
     
 }
 
+// Print VM status
+void printVMStatus() {    
+    // Print pc, bp, sp
+    printf("%4d%5d%5d   ", pc, bp, sp);
+    
+    // Print stack
+    printStack();
+    
+    // Move to new line
+    printf("\n");
+}
+
+void printStack() {
+    
+}
 
 
 
