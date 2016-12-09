@@ -20,29 +20,34 @@ struct instruction instructions[MAX_CODE_LENGTH];
 
 // Other helper variables
 int numInstructions = 0;
+int halt = 0;
 
 // Registers
 int sp = 0;
 int bp = 1;
 int pc = 0;
-int ir = 0;
+struct instruction ir;
 
-// Function declarations
+// Functions for main functionalities
 int readInstructions(char* inputFileName);
-void printInstructions();
 void printAssemblyCode();
+void runVMandPrint();
+// Functions for generating assembly code
 char* getAssemblerCode(struct instruction instr);
 char* getOpPart(struct instruction instr);
 char* getLPart(char* opPart, struct instruction instr);
 char* getMPart(char* opPart, struct instruction instr);
+// Functions for running virtual machine
+int base(int l, int b);
+void executeInstruction();
+// Utility functions for debug
+void printInstructions();
 
 
 
 int main(int argc, char** argv) {
-    int i = 0;
-
-    // Get input file name
     char inputFileName[100];
+    // Get input file name
     if (argc == 2) {
         strcpy(inputFileName, argv[1]);
     } else {
@@ -57,6 +62,7 @@ int main(int argc, char** argv) {
     }
     
     printAssemblyCode();
+    runVMandPrint();
 }
 
 // Save each instructions into instructions. 
@@ -103,6 +109,7 @@ void printAssemblyCode() {
     for (i = 0; i < numInstructions; i++) {
         printf("%3d  %s\n", i, getAssemblerCode(instructions[i]));
     }
+    printf("\n");
 }
 
 char* getAssemblerCode(struct instruction instr) {
@@ -110,6 +117,7 @@ char* getAssemblerCode(struct instruction instr) {
     char* lPart  = getLPart(opPart, instr);
     char* mPart  = getMPart(opPart, instr);
     
+    // With combinding all parts, generate one assembly PL/0 code.
     char* returnS = malloc(sizeof(char) * (strlen(opPart) + strlen(lPart) + strlen(mPart) + 2));
     sprintf(returnS, "%s%s%s  ", opPart, lPart, mPart);
     return returnS;
@@ -163,6 +171,7 @@ char* getLPart(char* opPart, struct instruction instr) {
     char* showL[] = {"LOD", "STO", "CAL"};
     
     for (i = 0; i < len; i++) {
+        // We need to show L in PL/0. Generate string with L in it.
         if (strcmp(opPart, showL[i]) == 0) {
             char* lPart = malloc(sizeof(char) * 5);
             sprintf(lPart, "%5d", instr.l);
@@ -170,6 +179,7 @@ char* getLPart(char* opPart, struct instruction instr) {
         }
     }
     
+    // When the program reaches here, we don't need to show L. Just return 5 spaces.
     return "     ";
 }
 
@@ -182,19 +192,139 @@ char* getMPart(char* opPart, struct instruction instr) {
     char* hideM[] = {"RET", "HLT"};
     
     for (i = 0; i < len; i++) {
+        // If we don't need to show M value, return 5 spaces here.
         if (strcmp(opPart, hideM[i]) == 0) {
             return "     ";
         }
     }
     
+    // When the program reaches here, we need to show M in PL/0. So generate string with M
     char* mPart = malloc(sizeof(char) * 5);
     sprintf(mPart, "%5d", instr.m);
     return mPart;
 }
 
+void runVMandPrint() {
+    // Print VM header
+    printf("Execution\n");
+    printf("                      pc   bp   sp   stack\n");
+    
+    while (halt == 0) {
+        // Fetch
+        ir = instructions[pc];
+        pc++;
+        
+        // Execute
+        executeInstruction();
+        
+    }
+}
 
+int base(int l, int b) {
+    while (l > 0) {
+        b = stack[b + 1];
+        l--;
+    }
+    return b;
+}
 
-
+// Execute instruction stored in ir
+void executeInstruction() {
+    // Save them into another local variable to make code readable
+    int op = ir.op;
+    int l = ir.l;
+    int m = ir.m;
+    
+    if (op == 1) {          // LIT
+        sp++;
+        stack[sp] = m;
+    } else if (op == 2) {   // OPR
+        if (m == 0) {           // RET
+            sp = bp - 1;
+            pc = stack[sp + 4];
+            bp = stack[sp + 3];
+        } else if (m == 1) {    // NEG
+            stack[sp] = (-1) * stack[sp];
+        } else if (m == 2) {    // ADD
+            sp--;
+            stack[sp] = stack[sp] + stack[sp + 1];
+        } else if (m == 3) {    // SUB
+            sp--;
+            stack[sp] = stack[sp] - stack[sp + 1];
+        } else if (m == 4) {    // MUL
+            sp--;
+            stack[sp] = stack[sp] * stack[sp + 1];
+        } else if (m == 5) {    // DIV
+            sp--;
+            stack[sp] = stack[sp] / stack[sp + 1];
+        } else if (m == 6) {    // ODD
+            stack[sp] = stack[sp] % 2;
+        } else if (m == 7) {    // MOD
+            sp--;
+            stack[sp] = stack[sp] % stack[sp + 1];
+        } else if (m == 8) {    // EQL
+            sp--;
+            stack[sp] = stack[sp] == stack[sp + 1];
+        } else if (m == 9) {    // NEQ
+            sp--;
+            stack[sp] = stack[sp] != stack[sp + 1];
+        } else if (m == 10) {   // LSS
+            sp--;
+            stack[sp] = stack[sp] < stack[sp + 1];
+        } else if (m == 11) {   // LEQ
+            sp--;
+            stack[sp] = stack[sp] <= stack[sp + 1];
+        } else if (m == 12) {   // GTR
+            sp--;
+            stack[sp] = stack[sp] > stack[sp + 1];
+        } else if (m == 13) {   // GEQ
+            sp--;
+            stack[sp] = stack[sp] >= stack[sp + 1];
+        } else {
+            // We should never reach here. When we reach here, something is wrong.
+            printf("Something is wrong\n");
+        }
+    } else if (op == 3) {   // LOD
+        sp++;
+        stack[sp] = stack[base(l, bp) + m];
+    } else if (op == 4) {   // STO
+        stack[base(l, bp) + m] = stack[sp];
+        sp--;
+    } else if (op == 5) {   // CAL
+        stack[sp + 1] = 0;
+        stack[sp + 2] = base(l, bp);
+        stack[sp + 3] = bp;
+        stack[sp + 4] = pc;
+        bp = sp + 1;
+        pc = m;
+    } else if (op == 6) {   // INC
+        sp += m;
+    } else if (op == 7) {   // JMP
+        pc = sp + m;
+    } else if (op == 8) {   // JPC
+        if (stack[sp] == 0) {
+            pc = m;
+        }
+        sp--;
+    } else if (op == 9) {   // SIO
+        if (m == 0) {           // OUT
+            printf("%d\n", stack[sp]);
+            sp--;
+        } else if (m == 1) {    // IN
+            sp++;
+            scanf("%d", &stack[sp]);
+        } else if (m == 2) {    // HLT
+            halt = 1;
+        } else {
+        // We should never reach here. When we reach here, something is wrong.
+        printf("Something is wrong\n");
+        }
+    } else {
+        // We should never reach here. When we reach here, something is wrong.
+        printf("Something is wrong\n");
+    }
+    
+}
 
 
 
