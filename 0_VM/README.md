@@ -82,6 +82,7 @@ int  m;   /* M
 The PM/0 instruction cycle is carried out in two steps:
 * Fetch Cycle
 * Execute Cycle
+
 #### Fetch Cycle:
 In the Fetch Cycle, an instruction is fetched from code store and placed in `ir`:
 
