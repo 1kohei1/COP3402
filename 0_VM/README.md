@@ -37,73 +37,83 @@ Your task is to implement a virtual machine (VM) known as the P-machine (PM/0).
 The P-machine is a stack-based machine with two memory stores:
 * stack that is organized as a stack and contains the data to be used by the PM/0 CPU
 * code that is organized as a list and contains the instructions for the VM
-Registers
+### Registers
 The PM/0 CPU has four registers. The registers are:
-bp base pointer
-sp stack pointer
-pc program counter
-ir instruction register
-Instruction format
-The Instruction Set Architecture (ISA) of the PM/0 has 24 instructions. Each instruction consists of three components (non-negative integers) OP L M
+* bp base pointer
+* sp stack pointer
+* pc program counter
+* ir instruction register
+### Instruction format
+The Instruction Set Architecture (ISA) of the PM/0 has 24 instructions. Each instruction consists of three components (non-negative integers) `OP L M`
 that are separated by one space. The names of the components are:
-OP operation code (op or opcode)
-L lexicographical level (level)
-M modifier
+* `OP` operation code (op or opcode)
+* `L` lexicographical level (level)
+* `M` modifier
 The modifier means depending on the opcode (mnemonic)
-Meaning Instructions
-number  LIT, INC
-program address JMP, JPC, CAL
-data address    LOD, STO
-identity of the operator    OPR, SIO
+| **Meaning** | **Instructions** |
+| ----------- | ---------------- |
+| number      | `LIT`, `INC`     |
+| program address | `JMP`, `JPC`, `CAL` |
+| data address | `LOD`, `STO` |
+| identity of the operator | `OPR`, `SIO` |
 The complete list of instructions is in Appendix A and B.
-Struct representing instructions
+### Struct representing instructions
 It is useful to use the following struct to represent instructions:
+```
 struct {
 int op;   /* opcode 
 int  l;   /* L            
 int  m;   /* M         
 } instruction;
-P-Machine Cycles:
+```
+### P-Machine Cycles:
 The PM/0 instruction cycle is carried out in two steps:
-Fetch Cycle
-Execute Cycle
-Fetch Cycle:
-In the Fetch Cycle, an instruction is fetched from code store and placed in ir:
-ir = code[pc];
+* Fetch Cycle
+* Execute Cycle
+#### Fetch Cycle:
+In the Fetch Cycle, an instruction is fetched from code store and placed in `ir`:
+`ir = code[pc];`
 The program counter is incremented by 1 to point to the next instruction to be executed:
-pc = pc + 1;
-Execute Cycle:
-In the Execute Cycle, the instruction that was fetched is executed by the VM. The operation code that is stored in the field ir.op indicates the operation to be executed.
-When the opcode ir.op equals 02 OPR or 09 SIO, then the modifier ir.m further identifies the instruction.
-PM/0 Initial/Default Values:
+`pc = pc + 1;`
+#### Execute Cycle:
+In the Execute Cycle, the instruction that was fetched is executed by the VM. The operation code that is stored in the field `ir.op` indicates the operation to be executed.
+When the opcode `ir.op` equals `02 OPR` or `09 SIO`, then the modifier `ir.m` further identifies the instruction.
+## PM/0 Initial/Default Values:
 Initial values for PM/0 CPU registers:
+```
 sp = 0;
 bp = 1;
 pc = 0;
 ir = 0;
+```
 Initial stack store values: We just show the first three stack locations:
+```
 stack[1] = 0;
 stack[2] = 0;
 stack[3] = 0;
+```
 Constant Values:
+```
 MAX_STACK_HEIGHT = 2000;
 MAX_CODE_LENGTH = 500;
 MAX_LEXI_LEVELS = 3;
-Appendix A - Instruction Set Architecture (ISA):
-Instruction Description
-01 LIT 0 M  Push value M onto stack
-02 OPR 0 M  Perform arithmetic or logical operations defined in detail below)
-03 LOD L M  Get value at offset M in frame L levels down and push it
-04 STO L M  Pop stack and insert value at offset M in frame L levels down
-05 CAL L M  Call procedure at M (generates new stack frame)
-06 INC 0 M  Allocate M locals on stack
-07 JMP 0 M  Jump to M
-08 JPC 0 M  Pop stack and jump to M if value is equal to 0
-09 SIO 0 0  OUT Pop stack and print out value
-09 SIO 0 1  INP Read in input from user and push it
-09 SIO 0 2  HLT Halt the machine
-Appendix B - ISA Pseudo Code:
-Instructions
+```
+## Appendix A - Instruction Set Architecture (ISA):
+| **Instruction** | **Description** |
+| `01 LIT 0 M` |  Push value M onto stack |
+| `02 OPR 0 M` |  Perform arithmetic or logical operations defined in detail below) |
+| `03 LOD L M` |  Get value at offset M in frame L levels down and push it |
+| `04 STO L M` |  Pop stack and insert value at offset M in frame L levels down |
+| `05 CAL L M` |  Call procedure at M (generates new stack frame) |
+| `06 INC 0 M` |  Allocate M locals on stack |
+| `07 JMP 0 M` |  Jump to M |
+| `08 JPC 0 M` |   Pop stack and jump to M if value is equal to 0 |
+| `09 SIO 0 0` |  OUT Pop stack and print out value |
+| `09 SIO 0 1` |  INP Read in input from user and push it |
+| `09 SIO 0 2` |   HLT Halt the machine |
+## Appendix B - ISA Pseudo Code:
+### Instructions
+```
 01  LIT  0  M
 sp = sp + 1;
 stack[sp] = M;
@@ -137,7 +147,9 @@ if ( stack[ sp ] == 0 ) then { pc = M; }
 sp = sp - 1;
 
 SIO 0 M (defined below)
-Arithmetic/logical instructions
+```
+### Arithmetic/logical instructions
+```
 02  OPR  0  M
 
 
@@ -195,8 +207,10 @@ stack[sp] = stack[sp] >  stack[sp + 1];
 13 GEQ  
 sp = sp – 1; 
 stack[sp] = stack[sp] >= stack[sp + 1];
+```
 The result of a logical operation such as EQL or LSS is defined as 1 if the condition is true and 0 otherwise.
-Input, output and halt instructions
+### Input, output and halt instructions
+```
 09  SIO  0  0           
 OUT
 print(stack[ sp ]);
@@ -210,3 +224,4 @@ read(stack[ sp ]);
 09  SIO  0  2           
 HLT
 halt;
+```
