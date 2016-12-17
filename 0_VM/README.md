@@ -41,18 +41,22 @@ if you don't want to write the trace of the execution to the screen, use
 
 If you're wondering what > means, read about Unix pipes: https://en.wikipedia.org/wiki/Pipeline_(Unix) There are also < and | but we don't need them for this first project.
 ## Detailed description of project
+
 ### The P-machine:
 Your task is to implement a virtual machine (VM) known as the P-machine (PM/0).
+
 ### Stack and code
 The P-machine is a stack-based machine with two memory stores:
 * stack that is organized as a stack and contains the data to be used by the PM/0 CPU
 * code that is organized as a list and contains the instructions for the VM
+
 ### Registers
 The PM/0 CPU has four registers. The registers are:
-* bp base pointer
-* sp stack pointer
-* pc program counter
-* ir instruction register
+* `bp` base pointer
+* `sp` stack pointer
+* `pc` program counter
+* `ir` instruction register
+
 ### Instruction format
 The Instruction Set Architecture (ISA) of the PM/0 has 24 instructions. Each instruction consists of three components (non-negative integers) `OP L M` that are separated by one space. 
 
@@ -69,6 +73,7 @@ The modifier means depending on the opcode (mnemonic)
 | data address | `LOD`, `STO` |
 | identity of the operator | `OPR`, `SIO` |
 The complete list of instructions is in Appendix A and B.
+
 ### Struct representing instructions
 It is useful to use the following struct to represent instructions:
 ```
