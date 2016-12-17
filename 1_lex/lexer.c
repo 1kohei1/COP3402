@@ -2,20 +2,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tokens.h"
-
 #define DEFAULT_INPUT_FILE "input.pl0"
 #define FILE_NAME_WITHOUT_COMMENT "source_without_comment.pl0"
+#define TOKEN_LIST_FILE "token_list.txt"
 
 int shouldPrintSource = 0;
 int shouldPrintSourceWithoutComment = 0;
 
 void emptySourceWithoutCommentFile();
 void removeCommentFromInputFile(char* inputFileName);
+void lexicalAnalysis();
 
 // Utility functions
 void printFile(char* header, char* fileName);
 FILE* openFile(char* fileName, char* mode);
+int isDigit(char c);
+int isLetter(char c);
 
 int main(int argc, char** argv) {
     char inputFileName[100];
@@ -41,6 +43,9 @@ int main(int argc, char** argv) {
     
     // Remove comments from input file so that we can handle print source without comment arg.
     removeCommentFromInputFile(inputFileName);
+    
+    // Do lexical analysis and output result to TOKEN_LIST
+    lexicalAnalysis();
     
     // Handle parameters
     if (shouldPrintSource) {
@@ -69,11 +74,10 @@ void removeCommentFromInputFile(char* inputFileName) {
     
     // Put previous character
     fputc(prev, output);
-    
+    // Flag for if it is in comment or not.
     int isInComment = 0;
     
     while (fscanf(input, "%c", &curr) != EOF) {
-        printf("prev: %c, curr: %c\n", prev, curr);
         if (prev == '/' && curr == '*') {
             isInComment = 1;
         } else if (prev == '*' && curr == '/') {
@@ -97,6 +101,72 @@ void removeCommentFromInputFile(char* inputFileName) {
     fclose(output);
 }
 
+void lexicalAnalysis() {
+    FILE* input = openFile(FILE_NAME_WITHOUT_COMMENT, "r");
+    FILE* output = openFile(TOKEN_LIST_FILE, "w");
+    
+    char curr;
+    while(fscanf(input, "%c", &curr) != EOF) {
+        // If space, we don't need it. Keep going
+        if      (curr == ' ') continue;
+        // Handle one letter token
+        else if (curr == '+') fprintf(output, "%s %d ", "+", 4);
+        else if (curr == '-') fprintf(output, "%s %d ", "-", 5);
+        else if (curr == '*') fprintf(output, "%s %d ", "*", 6);
+        else if (curr == '/') fprintf(output, "%s %d ", "/", 7);
+        else if (curr == '=') fprintf(output, "%s %d ", "=", 9);
+        else if (curr == '(') fprintf(output, "%s %d ", "(", 15);
+        else if (curr == ')') fprintf(output, "%s %d ", ")", 16);
+        else if (curr == ',') fprintf(output, "%s %d ", ",", 17);
+        else if (curr == ';') fprintf(output, "%s %d ", ";", 18);
+        else if (curr == '.') fprintf(output, "%s %d ", ".", 19);
+        // Handle multiple letter tokens
+        else if (curr == ':') {
+            // Get next character
+            char next;
+            fscanf(input, "%c", &next);
+            
+            if (next == '=') {
+                fprintf(output, "%s %d ", ":=", 20);
+            } else {
+                printf("[ERR] Invalid token (:%c) is given\nEnd the program\n", next);
+                exit(1);
+            }
+        }
+        else if (curr == '<' || curr == '>') {
+            // Get next character
+            char next;
+            fscanf(input, "%c", &next);
+            
+            if      (curr == '<' && next == '>') fprintf(output, "%s %d ", "<>", 10);
+            else if (curr == '<' && next == '=') fprintf(output, "%s %d ", "<=", 12);
+            else if (curr == '>' && next == '=') fprintf(output, "%s %d ", ">=", 14);
+            else if (curr == '<' && isDigit(next) && isLetter(next)) {
+                // Register as '<' and let next cycle figure out what comes after this.
+                fprintf(output, "%s %d ", "<", 11);
+                // Move cursor one back to handle next token.
+                fseek(input, 1, SEEK_CUR);
+            } else if (curr == '>' && isDigit(next) && isLetter(next)) {
+                // Register as '<' and let next cycle figure out what comes after this.
+                fprintf(output, "%s %d ", ">", 13);
+                // Move cursor one back to handle next token.
+                fseek(input, 1, SEEK_CUR);
+            }
+            else {
+                printf("[ERR] Invalid token (%c%c) is given\nEnd the program\n", curr, next);
+                exit(1);
+            }
+        }
+        // Now everything left is something we need to read till space
+        else {
+            
+        }
+    }
+    
+    // Close the file
+    fclose(input);
+    fclose(output);
+}
 
 void printFile(char* header, char* fileName) {
     // Opens the file. If file is not found, exit the program
@@ -133,4 +203,12 @@ FILE* openFile(char* fileName, char* mode) {
     }
     
     return f;
+}
+
+int isDigit(char c) {
+    return '0' <= c && c <= '9';
+}
+
+int isLetter(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
 }

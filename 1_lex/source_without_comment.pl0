@@ -2,4 +2,4 @@ vvr x, y;
 begin
   x := 3;                                     x := 4;
   x := y + 56;
-end
+end.
