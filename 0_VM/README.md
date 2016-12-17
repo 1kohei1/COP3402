@@ -1,40 +1,42 @@
-Brief description:
-reads in pm0 code,
+[Project link](https://bitbucket.org/schneider128k/2016_fall_2016_cop3402/wiki/Project_0_PM0_Virtual_Machine)
 
-prints the assembler version of the pm0 code, and
+## Brief description:
+* reads in pm0 code,
+* prints the assembler version of the pm0 code, and
+* executes the pm0 code displaying the machine state after each instruction.
 
-executes the pm0 code displaying the machine state after each instruction.
-
-The file mcode.pm0 contains an example program.
-The file trace.txt is what your program should output when you run it on mcode.pm0.
-Note that stack[0] is not shown. It is important that you print out | to separate the activation records.
-The files trace.txt and mcode.pm0 are located in the code repo under Sources in the folder 0_virtual_machine. There are more test cases in the subfolder test-cases.
-Assignment instructions and guidelines:
-the VM must be written in C and must compile/run on eustis2
-submit to Webcourses a single zip file containing all source codes files and the text file collaboration.txt describing the contributions of each team member
-if your source code consists of a single file, then call this file vm.c (we will compile your code with gcc vm.c)
-if your source code consists of multiple files, then you must also create a makefile and include it inside the zip file (without the makefile we would not know how to compile your code)
+The file `mcode.pm0` contains an example program.
+The file `trace.txt` is what your program should output when you run it on `mcode.pm0`.
+**Note that stack[0] is not shown.** It is important that you print out | to separate the activation records.
+The files `trace.txt` and `mcode.pm0` are located in the code repo under `Sources` in the folder [`0_virtual_machine`](https://bitbucket.org/schneider128k/2016_fall_2016_cop3402/src/867f7bb8fd3e268abc479dfeedd5b018615aafb1/0_virtual_machine/a_project_supporting_files/?at=master). There are more test cases in the subfolder test-cases.
+## Assignment instructions and guidelines:
+* the VM must be written in C and must compile/run on eustis2
+* submit to Webcourses a single zip file containing all source codes files and the text file collaboration.txt describing the contributions of each team member
+* if your source code consists of a single file, then call this file vm.c (we will compile your code with gcc vm.c)
+* if your source code consists of multiple files, then you must also create a makefile and include it inside the zip file (without the makefile we would not know how to compile your code)
 Both files should start with comments identifying all team members
+```
 // Team name:
 // Name of first team member
 // Name of second team member 
 // ...`
-Compile and run the code guidelines:
+```
+## Compile and run the code guidelines:
 Compile:
-gcc vm.c
+`gcc vm.c`
 Run:
-./a.out mcode.pm0
+`./a.out mcode.pm0`
 if you don't want to write the trace of the execution to the screen, use
-./a.out mcode.pm0 > trace.txt
+`./a.out mcode.pm0 > trace.txt`
 (or any other file name of your choice)
 If you're wondering what > means, read about Unix pipes: https://en.wikipedia.org/wiki/Pipeline_(Unix) There are also < and | but we don't need them for this first project.
-Detailed description of project
-The P-machine:
+## Detailed description of project
+### The P-machine:
 Your task is to implement a virtual machine (VM) known as the P-machine (PM/0).
-Stack and code
+### Stack and code
 The P-machine is a stack-based machine with two memory stores:
-stack that is organized as a stack and contains the data to be used by the PM/0 CPU
-code that is organized as a list and contains the instructions for the VM
+* stack that is organized as a stack and contains the data to be used by the PM/0 CPU
+* code that is organized as a list and contains the instructions for the VM
 Registers
 The PM/0 CPU has four registers. The registers are:
 bp base pointer
