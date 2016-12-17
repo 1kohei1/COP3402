@@ -18,6 +18,8 @@ void printFile(char* header, char* fileName);
 FILE* openFile(char* fileName, char* mode);
 int isDigit(char c);
 int isLetter(char c);
+char* readUptoNonLetterNonDigit(FILE* f);
+char* appendChar(char* str, char c);
 
 int main(int argc, char** argv) {
     char inputFileName[100];
@@ -74,6 +76,7 @@ void removeCommentFromInputFile(char* inputFileName) {
     
     // Put previous character
     fputc(prev, output);
+    prev = curr;
     // Flag for if it is in comment or not.
     int isInComment = 0;
     
@@ -107,8 +110,9 @@ void lexicalAnalysis() {
     
     char curr;
     while(fscanf(input, "%c", &curr) != EOF) {
-        // If space, we don't need it. Keep going
-        if      (curr == ' ') continue;
+        // printf("curr: %c\n", curr);
+        // If space or new line, ignore it.
+        if (curr == ' ' || curr == '\n') continue;
         // Handle one letter token
         else if (curr == '+') fprintf(output, "%s %d ", "+", 4);
         else if (curr == '-') fprintf(output, "%s %d ", "-", 5);
@@ -141,16 +145,16 @@ void lexicalAnalysis() {
             if      (curr == '<' && next == '>') fprintf(output, "%s %d ", "<>", 10);
             else if (curr == '<' && next == '=') fprintf(output, "%s %d ", "<=", 12);
             else if (curr == '>' && next == '=') fprintf(output, "%s %d ", ">=", 14);
-            else if (curr == '<' && isDigit(next) && isLetter(next)) {
+            else if (curr == '<' && (isDigit(next) || isLetter(next))) {
                 // Register as '<' and let next cycle figure out what comes after this.
                 fprintf(output, "%s %d ", "<", 11);
                 // Move cursor one back to handle next token.
-                fseek(input, 1, SEEK_CUR);
-            } else if (curr == '>' && isDigit(next) && isLetter(next)) {
+                fseek(input, -1, SEEK_CUR);
+            } else if (curr == '>' && (isDigit(next) || isLetter(next))) {
                 // Register as '<' and let next cycle figure out what comes after this.
                 fprintf(output, "%s %d ", ">", 13);
                 // Move cursor one back to handle next token.
-                fseek(input, 1, SEEK_CUR);
+                fseek(input, -1, SEEK_CUR);
             }
             else {
                 printf("[ERR] Invalid token (%c%c) is given\nEnd the program\n", curr, next);
@@ -159,7 +163,11 @@ void lexicalAnalysis() {
         }
         // Now everything left is something we need to read till space
         else {
+            // Move cursor one back to handle get token.
+            fseek(input, -1, SEEK_CUR);
             
+            char* token = readUptoNonLetterNonDigit(input);
+            printf("%s\n", token);
         }
     }
     
@@ -203,6 +211,29 @@ FILE* openFile(char* fileName, char* mode) {
     }
     
     return f;
+}
+
+char* readUptoNonLetterNonDigit(FILE* f) {
+    char c;
+    char* str = malloc(sizeof(char));
+    
+    while (fscanf(f, "%c", &c) != EOF && (isDigit(c) || isLetter(c))) {
+        str = appendChar(str, c);
+    }
+    
+    // The last character was not digit or letter. 
+    // To read that character in the next loop, go back 1 character.
+    fseek(f, -1, SEEK_CUR);
+    
+    return str;
+}
+
+char* appendChar(char* str, char c) {
+    char* returnS = malloc(sizeof(char) * (strlen(str) + 1));
+    strcpy(returnS, str);
+    returnS[strlen(str)] = c;
+    
+    return returnS;
 }
 
 int isDigit(char c) {
