@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NUMBER_LIMIT 65535
 #define IDENT_LENGTH_LIMIT 12
 #define DEFAULT_INPUT_FILE "input.pl0"
 #define FILE_NAME_WITHOUT_COMMENT "source_without_comment.pl0"
@@ -23,8 +24,8 @@ int isLetter(char c);
 char* readUptoNonLetterNonDigit(FILE* f);
 char* appendChar(char* str, char c);
 int isValidIdent(char* ident);
-void checkNextCharIfNotEndProgram(FILE* f, char* token, char c);
-void consumeChar(FILE* f, char c);
+int isValidNumber(char* number);
+int convertToInt(char* number);
 
 int main(int argc, char** argv) {
     char inputFileName[100];
@@ -57,9 +58,11 @@ int main(int argc, char** argv) {
     // Handle parameters
     if (shouldPrintSource) {
         printFile("source code:", inputFileName);
+        printf("\n");
     }
     if (shouldPrintSourceWithoutComment) {
         printFile("source code without comments:", FILE_NAME_WITHOUT_COMMENT);
+        printf("\n");
     }
 
     // Output token list
@@ -151,85 +154,60 @@ void lexicalAnalysis() {
             if      (curr == '<' && next == '>') fprintf(output, "%s %d ", "<>", 10);
             else if (curr == '<' && next == '=') fprintf(output, "%s %d ", "<=", 12);
             else if (curr == '>' && next == '=') fprintf(output, "%s %d ", ">=", 14);
-            else if (curr == '<' && (isDigit(next) || isLetter(next))) {
-                // Register as '<' and let next cycle figure out what comes after this.
-                fprintf(output, "%s %d ", "<", 11);
-                // Move cursor one back to handle next token.
-                fseek(input, -1, SEEK_CUR);
-            } else if (curr == '>' && (isDigit(next) || isLetter(next))) {
-                // Register as '<' and let next cycle figure out what comes after this.
-                fprintf(output, "%s %d ", ">", 13);
-                // Move cursor one back to handle next token.
-                fseek(input, -1, SEEK_CUR);
-            }
+            // Handle the case that next character is not '>', '='
             else {
-                printf("[ERR] Invalid token (%c%c) is given\nEnd the program\n", curr, next);
-                exit(1);
+                fprintf(output, "%c %d ", curr, curr == '<' ? 11 : 13);
+                // Move cursor 1 back to read next token.
+                fseek(input, -1, SEEK_CUR);
             }
         }
-        // Now everything left is something we need to read till space
-        else {
+        // Handle number
+        else if (isDigit(curr)) {
+            // Move cursor one back to get a number.
+            fseek(input, -1, SEEK_CUR);
+            
+            char* number = readUptoNonLetterNonDigit(input);
+            if (!isValidNumber(number)) {
+                printf("[ERR] Invalid number (%s) is given\nEnd the program\n", number);
+                exit(1);
+            }
+            
+            fprintf(output, "%s %d ", number, 3);
+        }
+        // Handle reserved words or identifier
+        else if (isLetter(curr)) {
             // Move cursor one back to get token.
             fseek(input, -1, SEEK_CUR);
             
             char* token = readUptoNonLetterNonDigit(input);
+            printf("token: %s\n", token);
             
-            if      (strcmp(token, "begin") == 0) fprintf(output, "%s %d ", token, 21);
-            else if   (strcmp(token, "end") == 0) fprintf(output, "%s %d ", token, 22);
-            else if    (strcmp(token, "if") == 0) fprintf(output, "%s %d ", token, 23);
-            else if  (strcmp(token, "then") == 0) fprintf(output, "%s %d ", token, 24);
-            else if (strcmp(token, "while") == 0) fprintf(output, "%s %d ", token, 25);
-            else if    (strcmp(token, "do") == 0) fprintf(output, "%s %d ", token, 26);
-            else if  (strcmp(token, "else") == 0) fprintf(output, "%s %d ", token, 33);
-            // Handle the case that needs to read next identifier
-            else if  (strcmp(token, "call") == 0 ||
-                     strcmp(token, "const") == 0 ||
-                       strcmp(token, "var") == 0 ||
-                 strcmp(token, "procedure") == 0 ||
-                     strcmp(token, "write") == 0 ||
-                      strcmp(token, "read") == 0) {
-                // Check next character is space
-                checkNextCharIfNotEndProgram(input, token, ' ');
-            
-                // Consume extra space after the first space.
-                consumeChar(input, ' ');
-            
-                // Get ident
-                char *ident = readUptoNonLetterNonDigit(input);
-                // Check if it is a valid identifier.
-                if (!isValidIdent(ident)) {
-                    printf("[ERR] Invalid ident (%s) is given\nEnd the program\n", ident);
+            if            (strcmp(token, "odd") == 0) fprintf(output, "%s %d ", token, 8);
+            else if     (strcmp(token, "begin") == 0) fprintf(output, "%s %d ", token, 21);
+            else if       (strcmp(token, "end") == 0) fprintf(output, "%s %d ", token, 22);
+            else if        (strcmp(token, "if") == 0) fprintf(output, "%s %d ", token, 23);
+            else if      (strcmp(token, "then") == 0) fprintf(output, "%s %d ", token, 24);
+            else if     (strcmp(token, "while") == 0) fprintf(output, "%s %d ", token, 25);
+            else if        (strcmp(token, "do") == 0) fprintf(output, "%s %d ", token, 26);
+            else if      (strcmp(token, "call") == 0) fprintf(output, "%s %d ", token, 27);
+            else if     (strcmp(token, "const") == 0) fprintf(output, "%s %d ", token, 28);
+            else if       (strcmp(token, "var") == 0) fprintf(output, "%s %d ", token, 29);
+            else if (strcmp(token, "procedure") == 0) fprintf(output, "%s %d ", token, 30);
+            else if     (strcmp(token, "write") == 0) fprintf(output, "%s %d ", token, 31);
+            else if      (strcmp(token, "read") == 0) fprintf(output, "%s %d ", token, 32);
+            else if      (strcmp(token, "else") == 0) fprintf(output, "%s %d ", token, 33);
+            // If token is not one of reserved word, treat it as identifier
+            else {
+                if (!isValidIdent(token)) {
+                    printf("[ERR] Invalid ident (%s) is given\nEnd the program\n", token);
                     exit(1);
                 }
-                
-                // Get token value
-                int value = 0;
-                if           (strcmp(token, "call") == 0) value = 27;
-                else if     (strcmp(token, "const") == 0) value = 28;
-                else if       (strcmp(token, "var") == 0) value = 29;
-                else if (strcmp(token, "procedure") == 0) value = 30;
-                else if     (strcmp(token, "write") == 0) value = 31;
-                else if      (strcmp(token, "read") == 0) value = 32;
-                
-                // Put token
-                fprintf(output, "%s %d ", token, value);
-                // Put ident
-                fprintf(output, "%s %d ", ident, 2);
-                
-                // When it is const, it requires = number. Make sure they appear after const ident.
-                if (strcmp(token, "const") == 0) {
-                    
-                }
-                
-                else if (strcmp(token, "var") == 0) {
-                    
-                }
+                fprintf(output, "%s %d ", token, 2);
             }
-            // Invalid token
-            else {
-                // printf("[ERR] Invalid token (%s) is given\nEnd the program\n", token);
-                // exit(1);
-            }
+        }
+        else {
+            printf("[ERR] Invalid token (%c) is given\nEnd the program\n", curr);
+            exit(1);
         }
     }
     
@@ -252,7 +230,7 @@ void printFile(char* header, char* fileName) {
     
     char* line;
     while (fgets(line, 256, f)) {
-        printf("%s\n", line);
+        printf("%s", line);
     }
     
     // Close the file
@@ -265,11 +243,11 @@ void printTokenList() {
     printf("tokens:\n");
     printf("-------\n");
     
-    char* token;
+    char token[100];
     int value;
     
     while (fscanf(tokenList, "%s %d ", token, &value) != EOF) {
-        printf("%-20s%d\n", token, value);
+        printf("%-13s%d\n", token, value);
     }
     
     fclose(tokenList);
@@ -295,13 +273,14 @@ char* readUptoNonLetterNonDigit(FILE* f) {
     char c;
     char* str = malloc(sizeof(char));
     
-    while (fscanf(f, "%c", &c) != EOF && (isDigit(c) || isLetter(c))) {
+    while (fscanf(f, "%c", &c) != EOF) {
+        // If next read character is not either digit or letter, get out of the loop and move cursor 1 back.
+        if (!(isDigit(c) || isLetter(c))) {
+            fseek(f, -1, SEEK_CUR);
+            break;
+        }
         str = appendChar(str, c);
     }
-    
-    // The last character was not digit or letter. 
-    // To read that character in the next loop, go back 1 character.
-    fseek(f, -1, SEEK_CUR);
     
     return str;
 }
@@ -320,6 +299,42 @@ int isDigit(char c) {
 
 int isLetter(char c) {
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+int isValidNumber(char* number) {
+    int len = strlen(number);
+    // If it is empty, it's not a valid number
+    if (len == 0) {
+        return 0;
+    }
+    int i;
+    
+    // Check each of them are digit
+    for (i = 0; i < len; i++) {
+        if (!isDigit(number[i])) {
+            return 0;
+        }
+    }
+    
+    // Check the range.
+    return convertToInt(number) <= NUMBER_LIMIT;
+}
+
+/**
+ * Convert given number string to integer. number must be string that's consisted of digits.
+ * It stops calculation when num gets greater than NUMBER_LIMIT.
+ * This is to prevent integer overflow.
+ */
+int convertToInt(char* number) {
+    int num = 0;
+    int i;
+    
+    for (i = 0; i < strlen(number) && num <= NUMBER_LIMIT; i++) {
+        num *= 10;
+        num += number[i] - '0';
+    }
+    
+    return num;
 }
 
 int isValidIdent(char* ident) {
@@ -342,24 +357,4 @@ int isValidIdent(char* ident) {
     }
     
     return 1;
-}
-
-void checkNextCharIfNotEndProgram(FILE* f, char* token, char c) {
-    char temp;
-    if (fscanf(f, "%c", &temp) == EOF || temp != c) {
-        printf("[ERR] Invalid token (%s%c) is given\nEnd the program\n", token, temp);
-        exit(1);
-    }
-}
-
-/**
- * Consume given c until, it hits other than c
- */
-void consumeChar(FILE* f, char c) {
-    char temp;
-    while (fscanf(f, "%c", &temp) != EOF && temp == c) {
-        // Do nothing
-    }
-    // Move cursor 1 back since we read character that is not equal to given c.
-    fseek(f, -1, SEEK_CUR);
 }
