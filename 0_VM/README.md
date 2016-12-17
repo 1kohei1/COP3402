@@ -6,8 +6,11 @@
 * executes the pm0 code displaying the machine state after each instruction.
 
 The file `mcode.pm0` contains an example program.
+
 The file `trace.txt` is what your program should output when you run it on `mcode.pm0`.
+
 **Note that stack[0] is not shown.** It is important that you print out | to separate the activation records.
+
 The files `trace.txt` and `mcode.pm0` are located in the code repo under `Sources` in the folder [`0_virtual_machine`](https://bitbucket.org/schneider128k/2016_fall_2016_cop3402/src/867f7bb8fd3e268abc479dfeedd5b018615aafb1/0_virtual_machine/a_project_supporting_files/?at=master). There are more test cases in the subfolder test-cases.
 ## Assignment instructions and guidelines:
 * the VM must be written in C and must compile/run on eustis2
@@ -23,12 +26,19 @@ Both files should start with comments identifying all team members
 ```
 ## Compile and run the code guidelines:
 Compile:
+
 `gcc vm.c`
+
 Run:
+
 `./a.out mcode.pm0`
+
 if you don't want to write the trace of the execution to the screen, use
+
 `./a.out mcode.pm0 > trace.txt`
+
 (or any other file name of your choice)
+
 If you're wondering what > means, read about Unix pipes: https://en.wikipedia.org/wiki/Pipeline_(Unix) There are also < and | but we don't need them for this first project.
 ## Detailed description of project
 ### The P-machine:
@@ -44,12 +54,14 @@ The PM/0 CPU has four registers. The registers are:
 * pc program counter
 * ir instruction register
 ### Instruction format
-The Instruction Set Architecture (ISA) of the PM/0 has 24 instructions. Each instruction consists of three components (non-negative integers) `OP L M`
-that are separated by one space. The names of the components are:
+The Instruction Set Architecture (ISA) of the PM/0 has 24 instructions. Each instruction consists of three components (non-negative integers) `OP L M` that are separated by one space. 
+
+The names of the components are:
 * `OP` operation code (op or opcode)
 * `L` lexicographical level (level)
 * `M` modifier
 The modifier means depending on the opcode (mnemonic)
+
 | **Meaning** | **Instructions** |
 | ----------- | ---------------- |
 | number      | `LIT`, `INC`     |
@@ -72,11 +84,16 @@ The PM/0 instruction cycle is carried out in two steps:
 * Execute Cycle
 #### Fetch Cycle:
 In the Fetch Cycle, an instruction is fetched from code store and placed in `ir`:
+
 `ir = code[pc];`
+
 The program counter is incremented by 1 to point to the next instruction to be executed:
+
 `pc = pc + 1;`
+
 #### Execute Cycle:
 In the Execute Cycle, the instruction that was fetched is executed by the VM. The operation code that is stored in the field `ir.op` indicates the operation to be executed.
+
 When the opcode `ir.op` equals `02 OPR` or `09 SIO`, then the modifier `ir.m` further identifies the instruction.
 ## PM/0 Initial/Default Values:
 Initial values for PM/0 CPU registers:
@@ -99,7 +116,9 @@ MAX_CODE_LENGTH = 500;
 MAX_LEXI_LEVELS = 3;
 ```
 ## Appendix A - Instruction Set Architecture (ISA):
+
 | **Instruction** | **Description** |
+| --------------- | --------------- |
 | `01 LIT 0 M` |  Push value M onto stack |
 | `02 OPR 0 M` |  Perform arithmetic or logical operations defined in detail below) |
 | `03 LOD L M` |  Get value at offset M in frame L levels down and push it |
