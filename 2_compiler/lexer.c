@@ -1,8 +1,23 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "lexer.h"
+
+#define NUMBER_LIMIT 65535
+#define IDENT_LENGTH_LIMIT 12
+#define FILE_NAME_WITHOUT_COMMENT "source_without_comment.pl0"
+#define TOKEN_LIST_FILE "token_list.txt"
+
+void emptySourceWithoutCommentFile();
+void removeCommentFromInputFile(char* inputFileName);
+void lexicalAnalysis();
+
+// Utility functions
+FILE* openFile(char* fileName, char* mode);
+int isDigit(char c);
+int isLetter(char c);
+char* readUptoNonLetterNonDigit(FILE* f);
+char* appendChar(char* str, char c);
+int isValidIdent(char* ident);
+int isValidNumber(char* number);
+int convertToInt(char* number);
 
 void emptySourceWithoutCommentFile() {
     FILE* f = openFile(FILE_NAME_WITHOUT_COMMENT, "w");
@@ -58,16 +73,16 @@ void lexicalAnalysis() {
         // If space or new line, ignore it.
         if (curr == ' ' || curr == '\n') continue;
         // Handle one letter token
-        else if (curr == '+') fprintf(output, "%d %s ", 4, "+");
-        else if (curr == '-') fprintf(output, "%d %s ", 5, "-");
-        else if (curr == '*') fprintf(output, "%d %s ", 6, "*");
-        else if (curr == '/') fprintf(output, "%d %s ", 7, "/");
-        else if (curr == '=') fprintf(output, "%d %s ", 9, "=");
-        else if (curr == '(') fprintf(output, "%d %s ", 15, "(");
-        else if (curr == ')') fprintf(output, "%d %s ", 16, ")");
-        else if (curr == ',') fprintf(output, "%d %s ", 17, ",");
-        else if (curr == ';') fprintf(output, "%d %s ", 18, ";");
-        else if (curr == '.') fprintf(output, "%d %s ", 19, ".");
+        else if (curr == '+') fprintf(output, "%s %d ", "+", 4);
+        else if (curr == '-') fprintf(output, "%s %d ", "-", 5);
+        else if (curr == '*') fprintf(output, "%s %d ", "*", 6);
+        else if (curr == '/') fprintf(output, "%s %d ", "/", 7);
+        else if (curr == '=') fprintf(output, "%s %d ", "=", 9);
+        else if (curr == '(') fprintf(output, "%s %d ", "(", 15);
+        else if (curr == ')') fprintf(output, "%s %d ", ")", 16);
+        else if (curr == ',') fprintf(output, "%s %d ", ",", 17);
+        else if (curr == ';') fprintf(output, "%s %d ", ";", 18);
+        else if (curr == '.') fprintf(output, "%s %d ", ".", 19);
         // Handle multiple letter tokens
         else if (curr == ':') {
             // Get next character
@@ -75,7 +90,7 @@ void lexicalAnalysis() {
             fscanf(input, "%c", &next);
             
             if (next == '=') {
-                fprintf(output, "%d %s ", 20, ":=");
+                fprintf(output, "%s %d ", ":=", 20);
             } else {
                 printf("[ERR] Invalid token (:%c) is given\nEnd the program\n", next);
                 exit(1);
@@ -86,12 +101,12 @@ void lexicalAnalysis() {
             char next;
             fscanf(input, "%c", &next);
             
-            if      (curr == '<' && next == '>') fprintf(output, "%d %s ", 10, "<>");
-            else if (curr == '<' && next == '=') fprintf(output, "%d %s ", 12, "<=");
-            else if (curr == '>' && next == '=') fprintf(output, "%d %s ", 14, ">=");
+            if      (curr == '<' && next == '>') fprintf(output, "%s %d ", "<>", 10);
+            else if (curr == '<' && next == '=') fprintf(output, "%s %d ", "<=", 12);
+            else if (curr == '>' && next == '=') fprintf(output, "%s %d ", ">=", 14);
             // Handle the case that next character is not '>', '='
             else {
-                fprintf(output, "%d %s ", curr == '<' ? 11 : 13, curr);
+                fprintf(output, "%c %d ", curr, curr == '<' ? 11 : 13);
                 // Move cursor 1 back to read next token.
                 fseek(input, -1, SEEK_CUR);
             }
@@ -107,7 +122,7 @@ void lexicalAnalysis() {
                 exit(1);
             }
             
-            fprintf(output, "%d %s ", 3, number);
+            fprintf(output, "%s %d ", number, 3);
         }
         // Handle reserved words or identifier
         else if (isLetter(curr)) {
@@ -117,27 +132,27 @@ void lexicalAnalysis() {
             char* token = readUptoNonLetterNonDigit(input);
             printf("token: %s\n", token);
             
-            if            (strcmp(token, "odd") == 0) fprintf(output, "%d %s ", 8, token);
-            else if     (strcmp(token, "begin") == 0) fprintf(output, "%d %s ", 21, token);
-            else if       (strcmp(token, "end") == 0) fprintf(output, "%d %s ", 22, token);
-            else if        (strcmp(token, "if") == 0) fprintf(output, "%d %s ", 23, token);
-            else if      (strcmp(token, "then") == 0) fprintf(output, "%d %s ", 24, token);
-            else if     (strcmp(token, "while") == 0) fprintf(output, "%d %s ", 25, token);
-            else if        (strcmp(token, "do") == 0) fprintf(output, "%d %s ", 26, token);
-            else if      (strcmp(token, "call") == 0) fprintf(output, "%d %s ", 27, token);
-            else if     (strcmp(token, "const") == 0) fprintf(output, "%d %s ", 28, token);
-            else if       (strcmp(token, "var") == 0) fprintf(output, "%d %s ", 29, token);
-            else if (strcmp(token, "procedure") == 0) fprintf(output, "%d %s ", 30, token);
-            else if     (strcmp(token, "write") == 0) fprintf(output, "%d %s ", 31, token);
-            else if      (strcmp(token, "read") == 0) fprintf(output, "%d %s ", 32, token);
-            else if      (strcmp(token, "else") == 0) fprintf(output, "%d %s ", 33, token);
+            if            (strcmp(token, "odd") == 0) fprintf(output, "%s %d ", token, 8);
+            else if     (strcmp(token, "begin") == 0) fprintf(output, "%s %d ", token, 21);
+            else if       (strcmp(token, "end") == 0) fprintf(output, "%s %d ", token, 22);
+            else if        (strcmp(token, "if") == 0) fprintf(output, "%s %d ", token, 23);
+            else if      (strcmp(token, "then") == 0) fprintf(output, "%s %d ", token, 24);
+            else if     (strcmp(token, "while") == 0) fprintf(output, "%s %d ", token, 25);
+            else if        (strcmp(token, "do") == 0) fprintf(output, "%s %d ", token, 26);
+            else if      (strcmp(token, "call") == 0) fprintf(output, "%s %d ", token, 27);
+            else if     (strcmp(token, "const") == 0) fprintf(output, "%s %d ", token, 28);
+            else if       (strcmp(token, "var") == 0) fprintf(output, "%s %d ", token, 29);
+            else if (strcmp(token, "procedure") == 0) fprintf(output, "%s %d ", token, 30);
+            else if     (strcmp(token, "write") == 0) fprintf(output, "%s %d ", token, 31);
+            else if      (strcmp(token, "read") == 0) fprintf(output, "%s %d ", token, 32);
+            else if      (strcmp(token, "else") == 0) fprintf(output, "%s %d ", token, 33);
             // If token is not one of reserved word, treat it as identifier
             else {
                 if (!isValidIdent(token)) {
                     printf("[ERR] Invalid ident (%s) is given\nEnd the program\n", token);
                     exit(1);
                 }
-                fprintf(output, "%d %s ", 2, token);
+                fprintf(output, "%s %d ", token, 2);
             }
         }
         else {
@@ -149,6 +164,22 @@ void lexicalAnalysis() {
     // Close the file
     fclose(input);
     fclose(output);
+}
+
+/**
+ * Open file for read with given file name. 
+ * If it failed to open given file, it ends a program.
+ */
+FILE* openFile(char* fileName, char* mode) {
+    // Opens the file. If file is not found, exit the program
+    FILE* f;
+    f = fopen(fileName, mode);
+    if (f == NULL) {
+        printf("[ERR] Failed to open file %s\n", fileName);
+        exit(1);
+    }
+    
+    return f;
 }
 
 char* readUptoNonLetterNonDigit(FILE* f) {
@@ -165,6 +196,22 @@ char* readUptoNonLetterNonDigit(FILE* f) {
     }
     
     return str;
+}
+
+char* appendChar(char* str, char c) {
+    char* returnS = malloc(sizeof(char) * (strlen(str) + 1));
+    strcpy(returnS, str);
+    returnS[strlen(str)] = c;
+    
+    return returnS;
+}
+
+int isDigit(char c) {
+    return '0' <= c && c <= '9';
+}
+
+int isLetter(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
 }
 
 int isValidNumber(char* number) {
@@ -184,4 +231,43 @@ int isValidNumber(char* number) {
     
     // Check the range.
     return convertToInt(number) <= NUMBER_LIMIT;
+}
+
+/**
+ * Convert given number string to integer. number must be string that's consisted of digits.
+ * It stops calculation when num gets greater than NUMBER_LIMIT.
+ * This is to prevent integer overflow.
+ */
+int convertToInt(char* number) {
+    int num = 0;
+    int i;
+    
+    for (i = 0; i < strlen(number) && num <= NUMBER_LIMIT; i++) {
+        num *= 10;
+        num += number[i] - '0';
+    }
+    
+    return num;
+}
+
+int isValidIdent(char* ident) {
+    int len = strlen(ident);
+    // Check first character is a letter
+    if (!isLetter(ident[0])) {
+        return 0;
+    }
+    // Check length
+    if (len > IDENT_LENGTH_LIMIT) {
+        return 0;
+    }
+    
+    // Check all other part is consisted by digit or letter
+    int i;
+    for (i = 1; i < len; i++) {
+        if (!(isDigit(ident[i]) || isLetter(ident[i]))) {
+            return 0;
+        }
+    }
+    
+    return 1;
 }

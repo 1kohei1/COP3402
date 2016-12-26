@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define NUMBER_LIMIT 65535
 #define IDENT_LENGTH_LIMIT 12
 #define FILE_NAME_WITHOUT_COMMENT "source_without_comment.pl0"
