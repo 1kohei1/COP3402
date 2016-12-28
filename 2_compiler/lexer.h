@@ -8,6 +8,15 @@
 #define FILE_NAME_WITHOUT_COMMENT "source_without_comment.pl0"
 #define TOKEN_LIST_FILE "token_list.txt"
 
+typedef enum token_type {
+  nulsym = 1, identsym, numbersym, plussym, minussym,
+  multsym, slashsym, oddsym, eqsym, neqsym, lessym, leqsym,
+  gtrsym, geqsym, lparentsym, rparentsym, commasym, semicolonsym,
+  periodsym, becomessym, beginsym, endsym, ifsym, thensym,
+  whilesym, dosym, callsym, constsym, varsym, procsym, writesym,
+  readsym , elsesym
+} token_type;
+
 void emptySourceWithoutCommentFile();
 void removeCommentFromInputFile(char* inputFileName);
 void lexicalAnalysis();

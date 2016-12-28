@@ -17,25 +17,32 @@ typedef struct symbol {
 } symbol;
 symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
 
-typedef struct token {
+typedef struct token_template {
     int tokenVal;
-    struct symbol symbol;
-} token;
+    char name[12];
+} token_template;
 
 // Global variables
-int lexcal_level = 0;
+int lexical_level = 0;
+int numSymbol = 0;
+struct token_template token;
 FILE* tokenList;
 
 // Compiler part
 void compile();
 void program();
-void block(struct token token);
+void block();
+void statement();
 
 // Utility part
 void setTokenList();
 void closeTokenList();
-struct token getToken();
+void getNextToken();
 void error(int err);
+void printToken();
+void printSymbol();
+struct symbol* get_symbol(char name[12]);
+void put_symbol(int kind, char name[12], int val, int level, int addr);
 
 
 
@@ -53,16 +60,18 @@ int main(int argc, char** argv) {
     }
 
     // // Make source without comment file empty
-    // emptySourceWithoutCommentFile();
+    emptySourceWithoutCommentFile();
     
     // Remove comments from input file so that we can handle print source without comment arg.
-    // removeCommentFromInputFile(inputFileName);
+    removeCommentFromInputFile(inputFileName);
     
     // Do lexical analysis and output result to TOKEN_LIST
-    // lexicalAnalysis();
+    lexicalAnalysis();
 
+    compile();
 
-
+    printSymbol();
+    
 }
 
 // Compiler part
@@ -76,43 +85,105 @@ void compile() {
 }
 
 void program() {
-    struct token token = getToken();
-    program(token);
-    if (token != periodsym) {
-        error(9);
+    getNextToken();
+    block();
+    if (token.tokenVal != periodsym) {
+        // error(9);
     }
 }
 
-void block(struct token token) {
-    if (token == constsym) {
-        token = getToken();
+void block() {
+    // Handle const 
+    if (token.tokenVal == constsym) {
+        do {
+            // Identifier
+            getNextToken();
+            if (token.tokenVal != identsym) {
+                error(4);
+            } 
+            // Keep identifier name
+            char name[12];
+            strcpy(name, token.name);
+            // Equal
+            getNextToken();
+            if (token.tokenVal != eqsym) {
+                error(3);
+            }
+            // Number
+            getNextToken();
+            if (token.tokenVal != numbersym) {
+                error(30);
+            }
+            int val = convertToInt(token.name);
+            
+            // Insert to symbol table
+            put_symbol(1, name, val, 0, 0);
+            
+            // Get next token
+            getNextToken();
+        } while (token.tokenVal == commasym);
+        if (token.tokenVal != semicolonsym) {
+            error(5);
+        }
+        getNextToken();
     }
-    if (token == varsym) {
-        
+    // Handle var
+    if (token.tokenVal == varsym) {
+        do {
+            getNextToken();
+            if (token.tokenVal != identsym) {
+                error(4);
+            }
+            
+            // Insert to symbol table
+            put_symbol(2, token.name, 0, lexical_level, 0); // Not sure about modifier here.
+            
+            // Get next token
+            getNextToken();
+        } while (token.tokenVal == commasym);
+        if (token.tokenVal != semicolonsym) {
+            error(5);
+        }
+        getNextToken();
     }
+    // Handle procedure
+    while (token.tokenVal == procsym) {
+        getNextToken();
+        if (token.tokenVal != identsym) {
+            error(4);
+        }
+        getNextToken();
+        if (token.tokenVal != semicolonsym) {
+            error(5);
+        }
+        getNextToken();
+        block();
+        if (token.tokenVal != semicolonsym) {
+            error(5);
+        }
+        getNextToken();
+    }
+    
+    statement();
+}
+
+void statement() {
     
 }
 
 
 // Utility part
 void setTokenList() {
-    // tokenList = openFile(TOKEN_LIST_FILE, "r");
+    tokenList = openFile(TOKEN_LIST_FILE, "r");
 }
 
 void closeTokenList() {
     fclose(tokenList);
 }
 
-struct token getToken() {
-    int tokenVal;
-    char name[100];
-    
-    fscanf(tokenList, "%s %d ", name, &tokenVal);
-
-    struct token token;
-    token.tokenVal = tokenVal;
-
-    return token;
+void getNextToken() {
+    fscanf(tokenList, "%s %d ", token.name, &token.tokenVal);
+    // printToken();
 }
 
 /**
@@ -149,8 +220,61 @@ void error(int err) {
     else if (err == 27) printf("in must be followed by an identifier.");
     else if (err == 28) printf("Cannot reuse this symbol here.");
     else if (err == 29) printf("Cannot redefine constants.");
+    else if (err == 30) printf("Number is expected.");
+    else if (err == 31) printf("Reached the maximum number of symbol table.");
 
     printf("\n");
 
     exit(1);
+}
+
+void printToken() {
+    printf("tokenVal: %d, name: %s\n", token.tokenVal, token.name);
+}
+
+void printSymbol() {
+    int i;
+    for (i = 0; i < numSymbol; i++) {
+        struct symbol symbol = symbol_table[i];
+        printf("kind: %d, name: %s, val: %d, level: %d, addr: %d\n", symbol.kind, symbol.name, symbol.val, symbol.level, symbol.addr);
+    }
+}
+
+// function get_symbol that looks up a symbol in symbol table by name and
+// returns pointer symbol if found and NULL if not found
+struct symbol* get_symbol(char name[12]) {
+    int i;
+    for (i = 0; i < numSymbol; i++) {
+        if (strcmp(symbol_table[i].name, name) == 0) {
+            return &symbol_table[i];
+        }
+    }
+    return NULL;
+}
+
+// function put_symbol that puts a symbol into symbol table provided that 
+// a symbol with this name does not exist. (calls error function if name already exists)
+void put_symbol(int kind, char name[12], int val, int level, int addr) {
+    if (get_symbol(name) != NULL) {
+        // const
+        if (kind == 1) {
+            error(29);
+        } else {
+            error(28);
+        }
+    }
+    
+    if (numSymbol + 1 == MAX_SYMBOL_TABLE_SIZE) {
+        error(31);
+    }
+    
+    struct symbol symbol;
+    symbol.kind = kind;
+    strcpy(symbol.name, name);
+    symbol.val = val;
+    symbol.level = level;
+    symbol.addr = addr;
+    
+    symbol_table[numSymbol] = symbol;
+    numSymbol++;
 }

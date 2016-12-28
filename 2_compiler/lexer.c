@@ -130,7 +130,6 @@ void lexicalAnalysis() {
             fseek(input, -1, SEEK_CUR);
             
             char* token = readUptoNonLetterNonDigit(input);
-            printf("token: %s\n", token);
             
             if            (strcmp(token, "odd") == 0) fprintf(output, "%s %d ", token, 8);
             else if     (strcmp(token, "begin") == 0) fprintf(output, "%s %d ", token, 21);
