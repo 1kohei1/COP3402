@@ -1,0 +1,16 @@
+var x, y, t, product;
+begin
+  read x;
+  if x > 0 then begin
+    read y;
+    if y > 0 then begin
+      t := x;
+      product := 0;
+      while t > 0 do begin
+        product := product + y;
+        t := t - 1;
+      end;
+      write product;
+    end;
+  end;
+end .

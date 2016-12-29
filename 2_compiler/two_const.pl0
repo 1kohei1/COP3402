@@ -1,0 +1,5 @@
+const a = 88, b = 99;
+begin
+  write a;
+  write b
+end .

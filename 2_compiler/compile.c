@@ -79,8 +79,10 @@ int main(int argc, char** argv) {
 
     compile();
 
-    printSymbol();
+    // printSymbol();
     
+    // When the program reaches here, it is syntactically correct.
+    printf("No errors, program is syntactically correct.\n");
 }
 
 // Compiler part
