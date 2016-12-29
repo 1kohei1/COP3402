@@ -31,8 +31,17 @@ FILE* tokenList;
 // Compiler part
 void compile();
 void program();
+void constHandler();
+void varHandler();
+void procHandler();
 void block();
 void statement();
+void expression();
+void condition();
+int relation();
+void expression();
+void term();
+void factor();
 
 // Utility part
 void setTokenList();
@@ -78,9 +87,9 @@ int main(int argc, char** argv) {
 
 void compile() {
     setTokenList();
-    // Start compiling part
+
     program();
-    // Close token list
+
     closeTokenList();
 }
 
@@ -93,83 +102,190 @@ void program() {
 }
 
 void block() {
-    // Handle const 
     if (token.tokenVal == constsym) {
-        do {
-            // Identifier
-            getNextToken();
-            if (token.tokenVal != identsym) {
-                error(4);
-            } 
-            // Keep identifier name
-            char name[12];
-            strcpy(name, token.name);
-            // Equal
-            getNextToken();
-            if (token.tokenVal != eqsym) {
-                error(3);
-            }
-            // Number
-            getNextToken();
-            if (token.tokenVal != numbersym) {
-                error(30);
-            }
-            int val = convertToInt(token.name);
-            
-            // Insert to symbol table
-            put_symbol(1, name, val, 0, 0);
-            
-            // Get next token
-            getNextToken();
-        } while (token.tokenVal == commasym);
-        if (token.tokenVal != semicolonsym) {
-            error(5);
-        }
-        getNextToken();
+        constHandler();
     }
-    // Handle var
     if (token.tokenVal == varsym) {
-        do {
-            getNextToken();
-            if (token.tokenVal != identsym) {
-                error(4);
-            }
-            
-            // Insert to symbol table
-            put_symbol(2, token.name, 0, lexical_level, 0); // Not sure about modifier here.
-            
-            // Get next token
-            getNextToken();
-        } while (token.tokenVal == commasym);
-        if (token.tokenVal != semicolonsym) {
-            error(5);
-        }
-        getNextToken();
+        varHandler();
     }
-    // Handle procedure
     while (token.tokenVal == procsym) {
-        getNextToken();
-        if (token.tokenVal != identsym) {
-            error(4);
-        }
-        getNextToken();
-        if (token.tokenVal != semicolonsym) {
-            error(5);
-        }
-        getNextToken();
-        block();
-        if (token.tokenVal != semicolonsym) {
-            error(5);
-        }
-        getNextToken();
+        procHandler();
     }
     
     statement();
 }
 
+void constHandler() {
+    do {
+        // Identifier
+        getNextToken();
+        if (token.tokenVal != identsym) {
+            error(4);
+        } 
+        // Keep identifier name
+        char name[12];
+        strcpy(name, token.name);
+        // Equal
+        getNextToken();
+        if (token.tokenVal != eqsym) {
+            error(3);
+        }
+        // Number
+        getNextToken();
+        if (token.tokenVal != numbersym) {
+            error(30);
+        }
+        int val = convertToInt(token.name);
+        
+        // Insert to symbol table
+        put_symbol(1, name, val, 0, 0);
+        
+        // Get next token
+        getNextToken();
+    } while (token.tokenVal == commasym);
+    if (token.tokenVal != semicolonsym) {
+        error(5);
+    }
+    getNextToken();
+}
+
+void varHandler() {
+    do {
+        getNextToken();
+        if (token.tokenVal != identsym) {
+            error(4);
+        }
+        
+        // Insert to symbol table
+        put_symbol(2, token.name, 0, lexical_level, 0); // Not sure about modifier here.
+        
+        // Get next token
+        getNextToken();
+    } while (token.tokenVal == commasym);
+    if (token.tokenVal != semicolonsym) {
+        error(5);
+    }
+    getNextToken();
+}
+
+void procHandler() {
+    getNextToken();
+    if (token.tokenVal != identsym) {
+        error(4);
+    }
+    getNextToken();
+    if (token.tokenVal != semicolonsym) {
+        error(5);
+    }
+    getNextToken();
+    block();
+    if (token.tokenVal != semicolonsym) {
+        error(5);
+    }
+    getNextToken();
+}
+
 void statement() {
+    if (token.tokenVal == identsym) {
+        getNextToken();
+        if (token.tokenVal != becomessym) {
+            error(3);
+        }
+        getNextToken();
+        expression();
+    } else if (token.tokenVal == callsym) {
+        getNextToken();
+        if (token.tokenVal != identsym) {
+            error(14);
+        }
+        getNextToken();
+    } else if (token.tokenVal == beginsym) {
+        getNextToken();
+        statement();
+        while (token.tokenVal == semicolonsym) {
+            getNextToken();
+            statement();
+        }
+        if (token.tokenVal != endsym) {
+            error(17);
+        }
+        getNextToken();
+    } else if (token.tokenVal == ifsym) {
+        getNextToken();
+        condition();
+        if (token.tokenVal != thensym) {
+            error(16);
+        }
+        getNextToken();
+        statement();
+    } else if (token.tokenVal == whilesym) {
+        getNextToken();
+        condition();
+        if (token.tokenVal != dosym) {
+            error(18);
+        }
+        getNextToken();
+        statement();
+    }
     
 }
+
+void condition() {
+    if (token.tokenVal == oddsym) {
+        getNextToken();
+        expression();
+    } else {
+        expression();
+        if (!relation()) {
+            error(20);
+        }
+        getNextToken();
+        expression();
+    }
+}
+
+int relation() {
+    int val = token.tokenVal;
+    
+    return val == eqsym || val == neqsym || val == lessym || val == leqsym || val == gtrsym || val == geqsym;
+}
+
+void expression() {
+    if (token.tokenVal == plussym || token.tokenVal == minussym) {
+        getNextToken();
+    }
+    term();
+    while (token.tokenVal == plussym || token.tokenVal == minussym) {
+        getNextToken();
+        term();
+    }
+}
+
+void term() {
+    factor();
+    while (token.tokenVal == multsym || token.tokenVal == slashsym) {
+        getNextToken();
+        factor();
+    }
+}
+
+void factor() {
+    if (token.tokenVal == identsym) {
+        getNextToken();
+    } else if (token.tokenVal == numbersym) {
+        getNextToken();
+    } else if (token.tokenVal == lparentsym) {
+        getNextToken();
+        expression();
+        if (token.tokenVal != rparentsym) {
+            error(22);
+        }
+        getNextToken();
+    } else {
+        error(32);
+    }
+}
+
 
 
 // Utility part
@@ -220,8 +336,10 @@ void error(int err) {
     else if (err == 27) printf("in must be followed by an identifier.");
     else if (err == 28) printf("Cannot reuse this symbol here.");
     else if (err == 29) printf("Cannot redefine constants.");
+    // Custom error
     else if (err == 30) printf("Number is expected.");
     else if (err == 31) printf("Reached the maximum number of symbol table.");
+    else if (err == 32) printf("Factor couldn't be solved.");
 
     printf("\n");
 
