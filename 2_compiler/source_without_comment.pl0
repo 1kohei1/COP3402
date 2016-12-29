@@ -1,7 +1,5 @@
-var a, b;
+var x;
 begin
-  a := 88;
-  b := 99;
-  write a;
-  write b
-end .
+  x := 99;
+  x := x + 77;
+end.

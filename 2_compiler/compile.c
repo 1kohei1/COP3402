@@ -26,13 +26,14 @@ typedef struct token_template {
 int lexical_level = 0;
 int numSymbol = 0;
 struct token_template token;
+FILE* outputFile;
 FILE* tokenList;
 
 // Compiler part
 void compile();
 void program();
 void constHandler();
-void varHandler();
+int varHandler();
 void procHandler();
 void block();
 void statement();
@@ -46,6 +47,8 @@ void factor();
 // Utility part
 void setTokenList();
 void closeTokenList();
+void openOutputFile(char openFileName[100]);
+void closeOutputFile();
 void getNextToken();
 void error(int err);
 void printToken();
@@ -77,7 +80,7 @@ int main(int argc, char** argv) {
     // Do lexical analysis and output result to TOKEN_LIST
     lexicalAnalysis();
 
-    compile();
+    compile(outputFileName);
 
     // printSymbol();
     
@@ -87,11 +90,13 @@ int main(int argc, char** argv) {
 
 // Compiler part
 
-void compile() {
+void compile(char* outputFileName) {
     setTokenList();
+    openOutputFile(outputFileName);
 
     program();
 
+    closeOutputFile();
     closeTokenList();
 }
 
@@ -99,20 +104,24 @@ void program() {
     getNextToken();
     block();
     if (token.tokenVal != periodsym) {
-        // error(9);
+        error(9);
     }
 }
 
 void block() {
+    int numVar = 0;
     if (token.tokenVal == constsym) {
         constHandler();
     }
     if (token.tokenVal == varsym) {
-        varHandler();
+        numVar = varHandler();
     }
     while (token.tokenVal == procsym) {
         procHandler();
     }
+    
+    // Allocate memory required for var
+    fprintf(outputFile, "%d %d %d\n", 6, 0, 4 + numVar);
     
     statement();
 }
@@ -151,7 +160,8 @@ void constHandler() {
     getNextToken();
 }
 
-void varHandler() {
+int varHandler() {
+    int numVar = 0;
     do {
         getNextToken();
         if (token.tokenVal != identsym) {
@@ -163,11 +173,15 @@ void varHandler() {
         
         // Get next token
         getNextToken();
+        // Increment the number of var
+        numVar++;
     } while (token.tokenVal == commasym);
     if (token.tokenVal != semicolonsym) {
         error(5);
     }
     getNextToken();
+    
+    return numVar;
 }
 
 void procHandler() {
@@ -303,6 +317,14 @@ void setTokenList() {
 
 void closeTokenList() {
     fclose(tokenList);
+}
+
+void openOutputFile(char openFileName[100]) {
+    outputFile = openFile(openFileName, "w");
+}
+
+void closeOutputFile() {
+    fclose(outputFile);
 }
 
 void getNextToken() {
