@@ -7,6 +7,7 @@
 #define DEFAULT_INPUT_FILE "input.pl0"
 #define DEFAULT_OUTPUT_FILE "output.txt"
 #define MAX_SYMBOL_TABLE_SIZE 100
+#define MAX_CODE_LENGTH 500
 
 typedef struct symbol {
     int kind; // const = 1, var = 2, proc = 3
@@ -22,12 +23,20 @@ typedef struct token_template {
     char name[12];
 } token_template;
 
+struct pm0Code {
+    int op;   /* opcode */
+    int  l;   /* L */
+    int  m;   /* M */
+};
+
 // Global variables
 int lexical_level = 0;
 int numSymbol = 0;
 struct token_template token;
 FILE* outputFile;
 FILE* tokenList;
+int codeIndex = 0;
+struct pm0Code pm0Codes[MAX_CODE_LENGTH];
 
 // Compiler part
 void compile();
@@ -55,6 +64,7 @@ void printToken();
 void printSymbol();
 struct symbol* get_symbol(char name[12]);
 void put_symbol(int kind, char name[12], int val, int level, int addr);
+void insertPM0Code(int op, int l, int m);
 
 
 
@@ -82,7 +92,6 @@ int main(int argc, char** argv) {
 
     compile(outputFileName);
 
-    // printSymbol();
     
     // When the program reaches here, it is syntactically correct.
     printf("No errors, program is syntactically correct.\n");
@@ -92,11 +101,9 @@ int main(int argc, char** argv) {
 
 void compile(char* outputFileName) {
     setTokenList();
-    openOutputFile(outputFileName);
 
     program();
 
-    closeOutputFile();
     closeTokenList();
 }
 
@@ -121,7 +128,7 @@ void block() {
     }
     
     // Allocate memory required for var
-    fprintf(outputFile, "%d %d %d\n", 6, 0, 4 + numVar);
+    insertPM0Code(6, 0, 4 + numVar);
     
     statement();
 }
@@ -169,7 +176,7 @@ int varHandler() {
         }
         
         // Insert to symbol table
-        put_symbol(2, token.name, 0, lexical_level, 0); // Not sure about modifier here.
+        put_symbol(2, token.name, 0, lexical_level, 4 + numVar);
         
         // Get next token
         getNextToken();
@@ -203,6 +210,10 @@ void procHandler() {
 
 void statement() {
     if (token.tokenVal == identsym) {
+        // Check this ident exists in symbol table
+        if (get_symbol(token.name) == NULL) {
+            error(11);
+        }
         getNextToken();
         if (token.tokenVal != becomessym) {
             error(3);
@@ -214,6 +225,11 @@ void statement() {
         if (token.tokenVal != identsym) {
             error(14);
         }
+        // Check this ident exists in symbol table
+        if (get_symbol(token.name) == NULL) {
+            error(11);
+        }
+
         getNextToken();
     } else if (token.tokenVal == beginsym) {
         getNextToken();
@@ -233,20 +249,34 @@ void statement() {
             error(16);
         }
         getNextToken();
+
+        int tempCodeIndex = codeIndex;
+        insertPM0Code(8, 0, 0);
         statement();
+        pm0Codes[tempCodeIndex].m = codeIndex;
     } else if (token.tokenVal == whilesym) {
+        int codeIndex1 = codeIndex;
         getNextToken();
         condition();
+        int codeIndex2 = codeIndex;
+        insertPM0Code(8, 0, 0);
         if (token.tokenVal != dosym) {
             error(18);
         }
         getNextToken();
         statement();
+        insertPM0Code(7, 0, codeIndex1);
+        pm0Codes[codeIndex2].m = codeIndex;
     } else if (token.tokenVal == readsym || token.tokenVal == writesym) {
         getNextToken();
         if (token.tokenVal != identsym) {
             error(33);
         }
+        // Check this ident exists in symbol table
+        if (get_symbol(token.name) == NULL) {
+            error(11);
+        }
+
         getNextToken();
     }
     
@@ -273,26 +303,59 @@ int relation() {
 }
 
 void expression() {
+    int tokenVal;
     if (token.tokenVal == plussym || token.tokenVal == minussym) {
-        getNextToken();
-    }
-    term();
-    while (token.tokenVal == plussym || token.tokenVal == minussym) {
+        tokenVal = token.tokenVal;
         getNextToken();
         term();
+        // Negate
+        if (tokenVal == minussym) {
+            insertPM0Code(2, 0, 1);
+        }
+    } else {
+        term();
+    }
+
+    while (token.tokenVal == plussym || token.tokenVal == minussym) {
+        tokenVal = token.tokenVal;
+        getNextToken();
+        term();
+        // Addition
+        if (tokenVal == plussym) {
+            insertPM0Code(2, 0, 2);
+        }
+        // Subtraction
+        else {
+            insertPM0Code(2, 0, 3);
+        }
     }
 }
 
 void term() {
+    int tokenVal;
     factor();
     while (token.tokenVal == multsym || token.tokenVal == slashsym) {
+        tokenVal = token.tokenVal;
         getNextToken();
         factor();
+        // Multiplication
+        if (tokenVal == multsym) {
+            insertPM0Code(2, 0, 4);
+        }
+        // Division
+        else {
+            insertPM0Code(2, 0, 5);
+        }
     }
 }
 
 void factor() {
     if (token.tokenVal == identsym) {
+        // Check this ident exists in symbol table
+        if (get_symbol(token.name) == NULL) {
+            error(11);
+        }
+
         getNextToken();
     } else if (token.tokenVal == numbersym) {
         getNextToken();
@@ -371,6 +434,7 @@ void error(int err) {
     else if (err == 31) printf("Reached the maximum number of symbol table.");
     else if (err == 32) printf("Factor couldn't be solved.");
     else if (err == 33) printf("Identifiler must follow read or write.");
+    else if (err == 34) printf("Reached the maximum code the program can store");
 
     printf("\n");
 
@@ -426,4 +490,15 @@ void put_symbol(int kind, char name[12], int val, int level, int addr) {
     
     symbol_table[numSymbol] = symbol;
     numSymbol++;
+}
+
+void insertPM0Code(int op, int l, int m) {
+    if (codeIndex + 1 == MAX_CODE_LENGTH) {
+        error(34);
+    }
+    pm0Codes[codeIndex].op = op;
+    pm0Codes[codeIndex].l = l;
+    pm0Codes[codeIndex].m = m;
+
+    codeIndex++;
 }
