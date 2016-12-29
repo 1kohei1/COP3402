@@ -228,6 +228,12 @@ void statement() {
         }
         getNextToken();
         statement();
+    } else if (token.tokenVal == readsym || token.tokenVal == writesym) {
+        getNextToken();
+        if (token.tokenVal != identsym) {
+            error(33);
+        }
+        getNextToken();
     }
     
 }
@@ -342,6 +348,7 @@ void error(int err) {
     else if (err == 30) printf("Number is expected.");
     else if (err == 31) printf("Reached the maximum number of symbol table.");
     else if (err == 32) printf("Factor couldn't be solved.");
+    else if (err == 33) printf("Identifiler must follow read or write.");
 
     printf("\n");
 
