@@ -235,8 +235,13 @@ void statement() {
             error(14);
         }
         // Check this ident exists in symbol table
-        if (get_symbol(token.name) == NULL) {
+        struct symbol* symbol = get_symbol(token.name);
+        if (symbol == NULL) {
             error(11);
+        }
+        // If symbol is not a procedure, throw an error.
+        else if (symbol->kind != 3) {
+            error(15);
         }
 
         getNextToken();
@@ -288,11 +293,12 @@ void statement() {
         if (symbol == NULL) {
             error(11);
         }
-        else if (symbol->kind != 2) {
-            error(12);
-        }
 
         if (tokenVal == readsym) {
+            // If it is a read instruction, make sure it is a variable
+            if (symbol->kind != 2) {
+                error(12);
+            }
             // Get value from standard input
             insertPM0Code(9, 0, 1);
             // Move that value to correct level and address

@@ -288,11 +288,13 @@ void statement() {
         if (symbol == NULL) {
             error(11);
         }
-        else if (symbol->kind != 2) {
-            error(12);
-        }
 
         if (tokenVal == readsym) {
+            // If it is a read instruction, make sure it is a variable
+            if (symbol->kind != 2) {
+                error(12);
+            }
+            
             // Get value from standard input
             insertPM0Code(9, 0, 1);
             // Move that value to correct level and address
