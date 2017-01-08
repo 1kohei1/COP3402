@@ -5,14 +5,8 @@ procedure A;
     x := 22;
   end;
 
-procedure B;
-  begin
-    x := 33;
-    call A;
-  end;
-
 begin
   x := 11;
-  call B;
+  call A;
   write x;
 end.

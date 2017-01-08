@@ -116,6 +116,12 @@ void program() {
 }
 
 void block() {
+
+    // JMP instruction to jump main statement is necessary at the beginning of the program.
+    // So save current codeIndex as jmpCodeIndex
+    int jmpCodeIndex = codeIndex;
+    insertPM0Code(7, 0, 0);
+
     int numVar = 0;
     if (token.tokenVal == constsym) {
         constHandler();
@@ -125,8 +131,12 @@ void block() {
     }
     while (token.tokenVal == procsym) {
         procHandler();
+        insertPM0Code(2, 0, 0);
     }
-    
+
+    // Update JMP instruction address
+    pm0Codes[jmpCodeIndex].m = codeIndex;
+
     // Allocate memory required for var
     insertPM0Code(6, 0, 4 + numVar);
 
@@ -196,6 +206,9 @@ void procHandler() {
     if (token.tokenVal != identsym) {
         error(4);
     }
+    // Insert this procedure to symbol table
+    put_symbol(3, token.name, 0, lexical_level, codeIndex); // Not sure what value I need to pass for M address
+
     getNextToken();
     if (token.tokenVal != semicolonsym) {
         error(5);
@@ -243,6 +256,8 @@ void statement() {
         else if (symbol->kind != 3) {
             error(15);
         }
+
+        insertPM0Code(5, symbol->level, symbol->addr);
 
         getNextToken();
     } else if (token.tokenVal == beginsym) {

@@ -1,1 +1,1 @@
-var 29 a 2 ; 18 begin 21 read 32 a 2 ; 18 if 23 odd 8 a 2 then 24 begin 21 write 31 a 2 ; 18 end 22 ; 18 end 22 . 19 
+var 29 x 2 ; 18 procedure 30 A 2 ; 18 begin 21 x 2 := 20 22 3 ; 18 end 22 ; 18 procedure 30 B 2 ; 18 begin 21 x 2 := 20 33 3 ; 18 call 27 A 2 ; 18 end 22 ; 18 begin 21 x 2 := 20 11 3 ; 18 call 27 B 2 ; 18 write 31 x 2 ; 18 end 22 . 19 

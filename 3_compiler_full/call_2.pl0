@@ -7,8 +7,8 @@ procedure A;
 
 procedure B;
   begin
-    x := 33;
     call A;
+    x := 33;
   end;
 
 begin
