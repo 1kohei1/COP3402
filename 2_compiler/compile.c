@@ -210,7 +210,8 @@ void procHandler() {
 void statement() {
     if (token.tokenVal == identsym) {
         // Check this ident exists in symbol table
-        if (get_symbol(token.name) == NULL) {
+        struct symbol* symbol = get_symbol(token.name);
+        if (symbol == NULL) {
             error(11);
         }
         getNextToken();
@@ -219,6 +220,9 @@ void statement() {
         }
         getNextToken();
         expression();
+
+        // Set the result of computation back to the location of the variable
+        insertPM0Code(4, symbol->level, symbol->addr);
     } else if (token.tokenVal == callsym) {
         getNextToken();
         if (token.tokenVal != identsym) {
@@ -372,12 +376,20 @@ void term() {
 void factor() {
     if (token.tokenVal == identsym) {
         // Check this ident exists in symbol table
-        if (get_symbol(token.name) == NULL) {
+        struct symbol* symbol = get_symbol(token.name);
+        if (symbol == NULL) {
             error(11);
         }
 
+        // Push that value to the top of the stack
+        insertPM0Code(3, symbol->level, symbol->addr);
+
         getNextToken();
     } else if (token.tokenVal == numbersym) {
+        // Get a number and push it at the top of the stack
+        int val = convertToInt(token.name);
+        insertPM0Code(1, 0, val);
+
         getNextToken();
     } else if (token.tokenVal == lparentsym) {
         getNextToken();
@@ -522,8 +534,6 @@ void insertPM0Code(int op, int l, int m) {
     pm0Codes[codeIndex].op = op;
     pm0Codes[codeIndex].l = l;
     pm0Codes[codeIndex].m = m;
-
-    printf("Insert %d %d %d\n", op, l, m);
 
     codeIndex++;
 }
