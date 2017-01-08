@@ -52,8 +52,6 @@ void term();
 void factor();
 
 // Utility part
-void setTokenList();
-void closeTokenList();
 void writePM0ToOutput(char outputFileName[100]);
 void getNextToken();
 void error(int err);
@@ -78,18 +76,18 @@ int main(int argc, char** argv) {
         strcpy(outputFileName, argv[2]);
     }
 
-    // // Make source without comment file empty
+    // Make source without comment file empty
     emptySourceWithoutCommentFile();
     
-    // Remove comments from input file so that we can handle print source without comment arg.
+    // Remove comments from input file to make lexical analysis easy
     removeCommentFromInputFile(inputFileName);
     
-    // Do lexical analysis and output result to TOKEN_LIST
+    // Do lexical analysis and output result to TOKEN_LIST_FILE
     lexicalAnalysis();
 
     compile();
 
-    // If compile is executed successfully, write pm0 to output file.
+    // If compile is executed successfully, write pm0 codes to output file.
     writePM0ToOutput(outputFileName);
     
     // When the program reaches here, it is syntactically correct.
@@ -99,11 +97,12 @@ int main(int argc, char** argv) {
 // Compiler part
 
 void compile() {
-    setTokenList();
+    // We need to get token during parsing, leave the file open.
+    tokenList = openFile(TOKEN_LIST_FILE, "r");
 
     program();
 
-    closeTokenList();
+    fclose(tokenList);
 }
 
 void program() {
@@ -112,6 +111,7 @@ void program() {
     if (token.tokenVal != periodsym) {
         error(9);
     }
+    // Halt
     insertPM0Code(9, 0, 2);
 }
 
@@ -444,14 +444,6 @@ void factor() {
 
 
 // Utility part
-void setTokenList() {
-    tokenList = openFile(TOKEN_LIST_FILE, "r");
-}
-
-void closeTokenList() {
-    fclose(tokenList);
-}
-
 void getNextToken() {
     fscanf(tokenList, "%s %d ", token.name, &token.tokenVal);
     // printToken();
