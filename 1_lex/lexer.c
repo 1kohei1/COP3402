@@ -287,8 +287,7 @@ char* readUptoNonLetterNonDigit(FILE* f) {
 
 char* appendChar(char* str, char c) {
     char* returnS = malloc(sizeof(char) * (strlen(str) + 1));
-    strcpy(returnS, str);
-    returnS[strlen(str)] = c;
+    sprintf(returnS, "%s%c", str, c);
     
     return returnS;
 }
