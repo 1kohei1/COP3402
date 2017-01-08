@@ -318,20 +318,38 @@ void condition() {
     if (token.tokenVal == oddsym) {
         getNextToken();
         expression();
+
+        // Perform odd insturction
+        insertPM0Code(2, 0, 6);
     } else {
         expression();
-        if (!relation()) {
+        int relationOp = relation();
+        if (relationOp == -1) {
             error(20);
         }
         getNextToken();
         expression();
+
+        // Insert relation operator.
+        insertPM0Code(2, 0, relationOp);
     }
 }
 
+/**
+ * If current token is one of the relation operator, returns M for PM0 code 2 0 M.
+ * If current token is not relational operator, returns -1.
+ */
 int relation() {
-    int val = token.tokenVal;
-    
-    return val == eqsym || val == neqsym || val == lessym || val == leqsym || val == gtrsym || val == geqsym;
+    int i;
+    int relationArray[6] = {eqsym, neqsym, lessym, leqsym, gtrsym, geqsym};
+
+    for (i = 0; i < 6; i++) {
+        if (token.tokenVal == relationArray[i]) {
+            return 8 + i;
+        }
+    }
+
+    return -1;
 }
 
 void expression() {

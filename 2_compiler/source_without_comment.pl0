@@ -1,7 +1,7 @@
-var a, b, c;
+var a;
 begin
   read a;
-  read b;
-  c := -a * b;
-  write c;
+  if odd a then begin
+    write a;
+  end;
 end.
