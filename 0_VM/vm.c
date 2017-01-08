@@ -222,12 +222,13 @@ void runVMandPrint() {
         ir = instructions[pc];
         // Print current pc and assembly code
         char* assemblyCode = getAssemblerCode(ir);
+        int prepc = pc;
         pc++;
 
         // Execute
         executeInstruction();
 
-        printf("%3d  %s", pc - 1, assemblyCode);
+        printf("%3d  %s", prepc, assemblyCode);
 
         // Print status of VM
         printVMStatus();
@@ -324,7 +325,7 @@ void executeInstruction() {
     } else if (op == 6) {   // INC
         sp += m;
     } else if (op == 7) {   // JMP
-        pc = sp + m;
+        pc = m;
     } else if (op == 8) {   // JPC
         if (stack[sp] == 0) {
             pc = m;
