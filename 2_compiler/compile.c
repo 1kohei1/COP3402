@@ -112,6 +112,7 @@ void program() {
     if (token.tokenVal != periodsym) {
         error(9);
     }
+    insertPM0Code(9, 0, 2);
 }
 
 void block() {

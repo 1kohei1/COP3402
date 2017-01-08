@@ -1,0 +1,8 @@
+var a;
+begin 
+  read a;
+  while a > 0 do begin
+    write a;
+    a := a - 1;
+  end;
+end.
