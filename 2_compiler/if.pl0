@@ -3,8 +3,7 @@ begin
   read a;
   read b;
 
-  if odd a + b then begin
+  if a < b then begin
     write a;
-	write b;
   end;
 end.
