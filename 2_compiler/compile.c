@@ -45,7 +45,6 @@ void constHandler();
 int varHandler();
 void procHandler();
 void statement();
-void expression();
 void condition();
 int relation();
 void expression();
@@ -281,7 +280,10 @@ void statement() {
         }
 
         if (tokenVal == readsym) {
-
+            // Get value from standard input
+            insertPM0Code(9, 0, 1);
+            // Move that value to correct level and address
+            insertPM0Code(4, symbol->level, symbol->addr);
         } else if (tokenVal == writesym) {
             // Writing const to STO
             if (symbol->kind == 1) {
