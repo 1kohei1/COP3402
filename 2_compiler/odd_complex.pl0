@@ -5,6 +5,6 @@ begin
 
   if odd a + b then begin
     write a;
-	write b;
+    write b;
   end;
 end.
