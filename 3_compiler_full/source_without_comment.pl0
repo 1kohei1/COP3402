@@ -1,0 +1,9 @@
+var a;
+begin
+  read a;
+
+  if odd a then begin
+    write a;
+  end;
+
+end.

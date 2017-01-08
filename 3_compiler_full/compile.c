@@ -264,10 +264,27 @@ void statement() {
         }
         getNextToken();
 
-        int tempCodeIndex = codeIndex;
+        // Depending on the result of condition, skip statement
+        int jpcCodeIndex = codeIndex;
         insertPM0Code(8, 0, 0);
+
+        // Execute statement
         statement();
-        pm0Codes[tempCodeIndex].m = codeIndex;
+        // After statement is executed, insert JMP instruction. This is not to execute else statement
+        int jmpCodeIndex = codeIndex;
+        insertPM0Code(7, 0, 0);
+
+        // Modify JPC address to execute the rest of program if if-condition is false
+        pm0Codes[jpcCodeIndex].m = codeIndex;
+
+        // Handle else syntax
+        if (token.tokenVal == elsesym) {
+            getNextToken();
+            statement();
+        }
+
+        // Modify JMP address to skip else instructions.
+        pm0Codes[jmpCodeIndex].m = codeIndex;
     } else if (token.tokenVal == whilesym) {
         int codeIndex1 = codeIndex;
         getNextToken();

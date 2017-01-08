@@ -1,0 +1,1 @@
+var 29 a 2 ; 18 begin 21 read 32 a 2 ; 18 if 23 odd 8 a 2 then 24 begin 21 write 31 a 2 ; 18 end 22 ; 18 end 22 . 19 
