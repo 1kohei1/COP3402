@@ -1,0 +1,6 @@
+const a = 20;
+var b;
+begin
+  b := a * 14;
+  write b
+end.

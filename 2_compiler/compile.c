@@ -214,6 +214,11 @@ void statement() {
         if (symbol == NULL) {
             error(11);
         }
+        // If symbol is not a variable, throw an error.
+        else if (symbol->kind != 2) {
+            error(12);
+        }
+        
         getNextToken();
         if (token.tokenVal != becomessym) {
             error(3);
@@ -381,8 +386,19 @@ void factor() {
             error(11);
         }
 
-        // Push that value to the top of the stack
-        insertPM0Code(3, symbol->level, symbol->addr);
+        // Symbol is const
+        if (symbol->kind == 1) {
+            insertPM0Code(1, 0, symbol->val);
+        }
+        // Symbol is var
+        else if (symbol->kind == 2) {
+            // Push that value to the top of the stack
+            insertPM0Code(3, symbol->level, symbol->addr);
+        }
+        // ident is procedures, throw an error
+        else {
+            error(21);
+        }
 
         getNextToken();
     } else if (token.tokenVal == numbersym) {
@@ -436,7 +452,7 @@ void writePM0ToOutput(char outputFileName[100]) {
  */ 
 void error(int err) {
     if (err == 1) printf("Use = instead of :=.");
-    else if (err == 2) printf("= must be followed by a number");
+    else if (err == 2) printf("= must be followed by a number.");
     else if (err == 3) printf("Identifier must be followed by =.");
     else if (err == 4) printf("const, var, procedure must be followed by identifier.");
     else if (err == 5) printf("Semicolon or comma missing.");
