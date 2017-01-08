@@ -1,5 +1,5 @@
-var x;
+const a = 88, b = 99;
 begin
-  x := 99;
-  x := x + 77;
-end.
+  write a;
+  write b
+end .

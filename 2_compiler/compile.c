@@ -33,7 +33,6 @@ struct pm0Code {
 int lexical_level = 0;
 int numSymbol = 0;
 struct token_template token;
-FILE* outputFile;
 FILE* tokenList;
 int codeIndex = 0;
 struct pm0Code pm0Codes[MAX_CODE_LENGTH];
@@ -41,10 +40,10 @@ struct pm0Code pm0Codes[MAX_CODE_LENGTH];
 // Compiler part
 void compile();
 void program();
+void block();
 void constHandler();
 int varHandler();
 void procHandler();
-void block();
 void statement();
 void expression();
 void condition();
@@ -56,8 +55,7 @@ void factor();
 // Utility part
 void setTokenList();
 void closeTokenList();
-void openOutputFile(char openFileName[100]);
-void closeOutputFile();
+void writePM0ToOutput(char outputFileName[100]);
 void getNextToken();
 void error(int err);
 void printToken();
@@ -90,8 +88,10 @@ int main(int argc, char** argv) {
     // Do lexical analysis and output result to TOKEN_LIST
     lexicalAnalysis();
 
-    compile(outputFileName);
+    compile();
 
+    // If compile is executed successfully, write pm0 to output file.
+    writePM0ToOutput(outputFileName);
     
     // When the program reaches here, it is syntactically correct.
     printf("No errors, program is syntactically correct.\n");
@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
 
 // Compiler part
 
-void compile(char* outputFileName) {
+void compile() {
     setTokenList();
 
     program();
@@ -129,7 +129,7 @@ void block() {
     
     // Allocate memory required for var
     insertPM0Code(6, 0, 4 + numVar);
-    
+
     statement();
 }
 
@@ -155,7 +155,7 @@ void constHandler() {
         }
         int val = convertToInt(token.name);
         
-        // Insert to symbol table
+        // Insert const declaration to symbol table
         put_symbol(1, name, val, 0, 0);
         
         // Get next token
@@ -268,13 +268,31 @@ void statement() {
         insertPM0Code(7, 0, codeIndex1);
         pm0Codes[codeIndex2].m = codeIndex;
     } else if (token.tokenVal == readsym || token.tokenVal == writesym) {
+        // Token gets updated for ident check. So save tokenVal at this point to differentiate read or write.
+        int tokenVal = token.tokenVal;
         getNextToken();
         if (token.tokenVal != identsym) {
             error(33);
         }
         // Check this ident exists in symbol table
-        if (get_symbol(token.name) == NULL) {
+        struct symbol* symbol = get_symbol(token.name);
+        if (symbol == NULL) {
             error(11);
+        }
+
+        if (tokenVal == readsym) {
+
+        } else if (tokenVal == writesym) {
+            // Writing const to STO
+            if (symbol->kind == 1) {
+                insertPM0Code(1, 0, symbol->val);
+                insertPM0Code(9, 0, 0);
+            }
+            // Writing var to STO
+            else {
+                insertPM0Code(3, symbol->level, symbol->addr);
+                insertPM0Code(9, 0, 0);
+            }
         }
 
         getNextToken();
@@ -382,17 +400,20 @@ void closeTokenList() {
     fclose(tokenList);
 }
 
-void openOutputFile(char openFileName[100]) {
-    outputFile = openFile(openFileName, "w");
-}
-
-void closeOutputFile() {
-    fclose(outputFile);
-}
-
 void getNextToken() {
     fscanf(tokenList, "%s %d ", token.name, &token.tokenVal);
     // printToken();
+}
+
+void writePM0ToOutput(char outputFileName[100]) {
+    FILE* outputFile = openFile(outputFileName, "w");
+
+    int i;
+    for (i = 0; i < codeIndex; i++) {
+        fprintf(outputFile, "%d %d %d\n", pm0Codes[i].op, pm0Codes[i].l, pm0Codes[i].m);
+    }
+
+    fclose(outputFile);
 }
 
 /**
@@ -499,6 +520,8 @@ void insertPM0Code(int op, int l, int m) {
     pm0Codes[codeIndex].op = op;
     pm0Codes[codeIndex].l = l;
     pm0Codes[codeIndex].m = m;
+
+    printf("Insert %d %d %d\n", op, l, m);
 
     codeIndex++;
 }
