@@ -222,14 +222,15 @@ void runVMandPrint() {
         ir = instructions[pc];
         // Print current pc and assembly code
         char* assemblyCode = getAssemblerCode(ir);
-        printf("%3d  %s", pc, assemblyCode);
         pc++;
-        
+
         // Execute
         executeInstruction();
-     
+
+        printf("%3d  %s", pc - 1, assemblyCode);
+
         // Print status of VM
-        printVMStatus();   
+        printVMStatus();
     }
 }
 
@@ -300,6 +301,7 @@ void executeInstruction() {
         } else {
             // We should never reach here. When we reach here, something is wrong.
             printf("Something is wrong 2\n");
+            exit(1);
         }
     } else if (op == 3) {   // LOD
         sp++;
@@ -338,12 +340,14 @@ void executeInstruction() {
         } else if (m == 2) {    // HLT
             halt = 1;
         } else {
-        // We should never reach here. When we reach here, something is wrong.
-        printf("Something is wrong 3\n");
+            // We should never reach here. When we reach here, something is wrong.
+            printf("Something is wrong 3\n");
+            exit(1);
         }
     } else {
         // We should never reach here. When we reach here, something is wrong.
         printf("Something is wrong 4\n");
+        exit(1);
     }
     
 }
