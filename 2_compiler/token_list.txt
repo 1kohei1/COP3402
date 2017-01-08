@@ -1,1 +1,1 @@
-var 29 a 2 ; 18 begin 21 read 32 a 2 ; 18 write 31 a 2 ; 18 end 22 . 19 
+const 28 a 2 = 9 32 3 ; 18 begin 21 read 32 a 2 ; 18 end 22 . 19 

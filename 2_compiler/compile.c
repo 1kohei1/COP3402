@@ -287,6 +287,9 @@ void statement() {
         if (symbol == NULL) {
             error(11);
         }
+        else if (symbol->kind != 2) {
+            error(12);
+        }
 
         if (tokenVal == readsym) {
             // Get value from standard input
