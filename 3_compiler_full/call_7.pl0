@@ -1,0 +1,19 @@
+var x;
+
+procedure A;
+  var delta;
+  begin
+    delta := 1;
+    if x < 4 then begin
+      x := x + delta;
+      call A;
+    end;
+  end;
+
+begin
+
+  x := 0;
+  call A;
+  write x;
+
+end.

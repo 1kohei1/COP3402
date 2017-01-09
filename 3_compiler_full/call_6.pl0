@@ -1,0 +1,18 @@
+var x;
+
+procedure A;
+
+  begin
+    if x < 6 then begin
+      x := x + 1;
+      call A;
+    end;
+  end;
+
+begin
+
+  x := 0;
+  call A;
+  write x;
+
+end.

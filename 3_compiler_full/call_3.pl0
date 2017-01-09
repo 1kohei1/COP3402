@@ -1,24 +1,20 @@
 var x,y,z;
 
 procedure A;
-
-  var xx;
-
-  procedure B;
-    begin
-      xx := 33;
-    end;
-
   begin
     y := 22;
-    call B;
-    x := xx;
   end;
 
+procedure B;
+  begin
+    call A;
+    x := 33;
+  end;
 
 begin
   x := 11;
-  call A;
+  call B;
   z := x + y;
   write z;
 end.
+

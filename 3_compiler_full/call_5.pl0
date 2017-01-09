@@ -1,0 +1,25 @@
+var x;
+
+procedure incBy2;
+
+  begin
+    x := x + 2
+  end;
+
+procedure decBy1;
+
+  begin 
+    x := x - 1;
+  end;
+
+
+begin
+
+  x := 0;
+  while x < 4 do begin
+    call incBy2;
+    call decBy1;
+    write x;
+  end;
+
+end.

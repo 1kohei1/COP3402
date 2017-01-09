@@ -117,7 +117,7 @@ void program() {
 
 void block() {
 
-    // JMP instruction to jump main statement is necessary at the beginning of the program.
+    // JMP instruction to main statement is necessary at the beginning of the program.
     // So save current codeIndex as jmpCodeIndex
     int jmpCodeIndex = codeIndex;
     insertPM0Code(7, 0, 0);
@@ -130,7 +130,9 @@ void block() {
         numVar = varHandler();
     }
     while (token.tokenVal == procsym) {
+        lexical_level++;
         procHandler();
+        lexical_level--;
         insertPM0Code(2, 0, 0);
     }
 
@@ -241,7 +243,7 @@ void statement() {
         expression();
 
         // Set the result of computation back to the location of the variable
-        insertPM0Code(4, symbol->level, symbol->addr);
+        insertPM0Code(4, lexical_level - symbol->level, symbol->addr);
     } else if (token.tokenVal == callsym) {
         getNextToken();
         if (token.tokenVal != identsym) {
@@ -334,7 +336,7 @@ void statement() {
             // Get value from standard input
             insertPM0Code(9, 0, 1);
             // Move that value to correct level and address
-            insertPM0Code(4, symbol->level, symbol->addr);
+            insertPM0Code(4, lexical_level - symbol->level, symbol->addr);
         } else if (tokenVal == writesym) {
             // Writing const to STO
             if (symbol->kind == 1) {
