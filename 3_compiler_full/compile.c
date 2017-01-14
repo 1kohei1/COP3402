@@ -130,9 +130,7 @@ void block() {
         numVar = varHandler();
     }
     while (token.tokenVal == procsym) {
-        lexical_level++;
         procHandler();
-        lexical_level--;
         insertPM0Code(2, 0, 0);
     }
 
@@ -216,7 +214,9 @@ void procHandler() {
         error(5);
     }
     getNextToken();
+    lexical_level++;
     block();
+    lexical_level--;
     if (token.tokenVal != semicolonsym) {
         error(5);
     }
@@ -259,7 +259,7 @@ void statement() {
             error(15);
         }
 
-        insertPM0Code(5, symbol->level, symbol->addr);
+        insertPM0Code(5, lexical_level, symbol->addr);
 
         getNextToken();
     } else if (token.tokenVal == beginsym) {
@@ -345,7 +345,7 @@ void statement() {
             }
             // Writing var to STO
             else {
-                insertPM0Code(3, symbol->level, symbol->addr);
+                insertPM0Code(3, lexical_level - symbol->level, symbol->addr);
                 insertPM0Code(9, 0, 0);
             }
         }
@@ -455,7 +455,7 @@ void factor() {
         // Symbol is var
         else if (symbol->kind == 2) {
             // Push that value to the top of the stack
-            insertPM0Code(3, symbol->level, symbol->addr);
+            insertPM0Code(3, lexical_level - symbol->level, symbol->addr);
         }
         // ident is procedures, throw an error
         else {

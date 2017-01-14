@@ -6,22 +6,17 @@ procedure A;
 
   procedure B;
     begin
-      x := x + y;
+      x := x + y;              /* <- line */
       write x;
-    end;
-
-  procedure C;
-    begin
-      call B;
-      if x < 10 then call C;
+      if x < 10 then call B;   /* (I) */
     end;
 
   begin
     y := 2;
-    call C;
+    call B;                    /* (II) */
   end;
 
 begin
   x := 5;
   call A;
-end.
+end .
